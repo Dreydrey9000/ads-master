@@ -9,10 +9,15 @@
 - [x] LLM insights endpoint (falls back to demo)
 
 ## Phase 2 — Real data
-- [ ] Auth + database (Supabase): users, businesses, ad accounts
-- [ ] OAuth "Connect" buttons for Meta, Google, TikTok, LinkedIn; API key entry for ChatGPT Ads
-- [ ] Nightly sync job → `daily_metrics`
-- [ ] Insights endpoint reads real data, stores history
+- [x] Database on **Convex**: businesses, adAccounts, credentials, metricsDaily, ads, insights, salesEvents, syncRuns
+- [x] Connect ChatGPT Ads + Meta from the Connections tab (account ID + key/token)
+- [x] Nightly sync cron (3 AM ET) + "Sync now" → `metricsDaily` / `ads`
+- [x] Nightly AI insights cron + "Refresh AI insights", stored per business
+- [x] Sales webhook `POST /sales-event` fills the Sales tab (Calendly, GHL, Zapier, Stripe)
+- [ ] Auth: Convex Auth (lock every function to the signed-in owner) — do this before deploying publicly
+- [ ] Encrypt stored tokens; Meta OAuth button instead of pasted tokens
+- [ ] Fetchers for Google Ads, TikTok, LinkedIn, YouTube (`convex/platforms/`)
+- [ ] Verify ChatGPT Ads endpoint paths against learn.chatgpt.com/ads docs
 
 ## Phase 3 — Research
 - [ ] Winning ads feed from Foreplay API/MCP + Meta Ad Library, filtered by each business's category
