@@ -23,7 +23,7 @@ Every platform implements `AdConnector` (`lib/types.ts`): `isConfigured()`, `get
 - Spend lags ~7–8h, conversions 24–48h. Don't let the AI judge a campaign on day one.
 - Community read-only MCP exists: HYPD-AI/openai-ads-mcp (useful reference).
 
-## Data model (next step: Postgres/Supabase)
+## Data model (implemented in Convex, see `convex/schema.ts`)
 `workspace → business → ad_account(platform) → campaign → ad → daily_metrics`
 
 ## Backend: Convex (Phase 2)
