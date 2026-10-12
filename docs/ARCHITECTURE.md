@@ -25,3 +25,19 @@ Every platform implements `AdConnector` (`lib/types.ts`): `isConfigured()`, `get
 
 ## Data model (next step: Postgres/Supabase)
 `workspace → business → ad_account(platform) → campaign → ad → daily_metrics`
+
+## Backend: Convex (Phase 2)
+```
+convex/
+  schema.ts        tables + indexes
+  businesses.ts    list / create / syncFromConfig (config file stays the template's source of truth)
+  accounts.ts      connect / disconnect ad accounts (tokens go to `credentials`, never returned to the client)
+  platforms/       one fetcher per ad platform (meta.ts, openai.ts; add google/tiktok/linkedin/youtube here)
+  sync.ts          syncAccount → upserts metricsDaily + ads; syncAll (cron); syncBusiness ("Sync now")
+  insights.ts      LLM good/bad/ugly per business, stored with history; rule-based fallback
+  dashboard.ts     one live query returning the exact shapes the UI already uses
+  sales.ts         log Leads → Booked → Showed → Closed
+  http.ts          POST /sales-event webhook
+  crons.ts         07:00 UTC sync, 08:00 UTC insights
+```
+The UI (`lib/live.ts`) uses live Convex data wherever it exists and falls back to demo data everywhere else, so the app works with zero setup.
