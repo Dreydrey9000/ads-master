@@ -24,9 +24,20 @@ cp .env.example .env.local   # add keys as you get them; missing ones show demo 
 npm run dev                  # http://localhost:3000
 ```
 
+### Go live with Convex
+```bash
+npx convex dev               # log in, create the project; writes NEXT_PUBLIC_CONVEX_URL to .env.local
+npx convex env set OPENAI_API_KEY sk-...        # AI insights
+npx convex env set SALES_WEBHOOK_SECRET <random> # Sales tab webhook
+npm run dev
+```
+Then open **Connections**, connect ChatGPT Ads or Meta, and hit **Sync now**. Data syncs nightly at 3 AM ET after that.
+Sales events: `POST https://<your-deployment>.convex.site/sales-event` with header `x-ads-master-secret` and
+`{"business":"dreys-coaching","stage":"closed","amount":2500,"platform":"meta"}`.
+
 ## Stack
 
-Next.js 14 (App Router) · TypeScript · Tailwind · Recharts · lucide icons
+Next.js 14 (App Router) · Convex · TypeScript · Tailwind · Recharts · lucide icons
 
 ## Structure
 
