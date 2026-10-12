@@ -8,6 +8,8 @@ import type { Business } from "@/lib/types";
 import { money, PlatformDot, Verdict } from "./ui";
 import { MiniArea, MiniDonut, MiniBars, GoalRing, Funnel, useCountUp } from "./charts";
 import AddBusiness from "./AddBusiness";
+import Connect from "./Connect";
+import { useLive } from "@/lib/live";
 
 const BASE_TABS = ["Overview", "AI Insights", "Winning Ads", "Spend Trends", "Connections"] as const;
 type Tab = (typeof BASE_TABS)[number] | "Sales";
@@ -29,13 +31,16 @@ export default function Dashboard() {
   const [tab, setTab] = useState<Tab>("Overview");
   useEffect(() => { if (tab === "Sales" && !biz.sales?.enabled) setTab("Overview"); }, [biz, tab]);
 
-  const metrics = useMemo(() => getMetrics(biz), [biz]);
-  const ads = useMemo(() => getAds(biz), [biz]);
-  const insights = useMemo(() => getInsights(biz), [biz]);
-  const sales = useMemo(() => (biz.sales?.enabled ? getSales(biz) : null), [biz]);
+  // Live Convex data wins wherever it exists; demo fills the gaps so the UI never looks empty.
+  const live = useLive(biz.id);
+  const metrics = useMemo(() => (live?.hasAdData ? live.metrics : getMetrics(biz)), [biz, live]);
+  const ads = useMemo(() => (live?.hasAdData ? live.ads : getAds(biz)), [biz, live]);
+  const insights = useMemo(() => (live?.insights.length ? live.insights : getInsights(biz)), [biz, live]);
+  const sales = useMemo(() => (!biz.sales?.enabled ? null : live?.sales?.hasData ? live.sales : getSales(biz)), [biz, live]);
+  const isLive = Boolean(live?.hasAdData);
   const totals = useMemo(() => {
     const spend = metrics.reduce((s, m) => s + m.spend, 0), revenue = metrics.reduce((s, m) => s + m.revenue, 0), conv = metrics.reduce((s, m) => s + m.conversions, 0);
-    return { spend, revenue, roas: revenue / spend, cpa: spend / conv };
+    return { spend, revenue, roas: spend ? revenue / spend : 0, cpa: conv ? spend / conv : 0 };
   }, [metrics]);
   const mix = metrics.map((m) => ({ name: platformById[m.platform].name, value: m.spend, color: platformById[m.platform].color }));
 
@@ -48,7 +53,7 @@ export default function Dashboard() {
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-lg font-black animate-glow">A</div>
           <div><h1 className="text-xl font-bold tracking-tight">{APP.name}</h1><p className="text-xs text-zinc-500">{APP.tagline}</p></div>
         </div>
-        <span className="rounded-full border border-ink-600 px-2 py-0.5 text-[10px] uppercase tracking-wider text-zinc-500">Demo data</span>
+        <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${isLive ? "border-good/50 text-good" : "border-ink-600 text-zinc-500"}`}>{isLive ? "● Live" : "Demo data"}</span>
       </header>
 
       {/* Business switcher */}
@@ -84,12 +89,12 @@ export default function Dashboard() {
             </div>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
               {metrics.map((m, i) => {
-                const p = platformById[m.platform], roas = m.revenue / m.spend;
+                const p = platformById[m.platform], roas = m.spend ? m.revenue / m.spend : 0;
                 return (
                   <div key={m.platform} className="card animate-rise !p-4" style={{ animationDelay: `${i * 70}ms` }}>
                     <div className="flex items-center justify-between"><PlatformDot id={m.platform} /><span className={`text-sm font-bold ${roas >= 3 ? "text-good" : roas >= 2 ? "text-bad" : "text-ugly"}`}>{roas.toFixed(1)}x</span></div>
                     <MiniArea data={m.trend} color={p.color} h={32} />
-                    <div className="flex justify-between text-[11px] text-zinc-500"><span>{money(m.spend)}</span><span>{((m.clicks / m.impressions) * 100).toFixed(2)}% CTR</span></div>
+                    <div className="flex justify-between text-[11px] text-zinc-500"><span>{money(m.spend)}</span><span>{m.impressions ? ((m.clicks / m.impressions) * 100).toFixed(2) : "0.00"}% CTR</span></div>
                   </div>
                 );
               })}
@@ -115,7 +120,7 @@ export default function Dashboard() {
             <div><div className="label">Closed this month</div><div className="text-2xl font-bold">{money(sales.closedRevenue)}</div><div className="text-xs text-zinc-500">Goal {money(sales.goal)}</div></div>
           </div>
           <div className="card animate-rise" style={{ animationDelay: "80ms" }}><div className="label mb-2">Closed $ / day (14d)</div><MiniBars data={sales.daily} color="#22c55e" /></div>
-          <div className="card animate-rise" style={{ animationDelay: "160ms" }}><div className="label mb-1">Ad spend per closed deal</div><div className="text-2xl font-bold">{money(totals.spend / sales.stages[3].value)}</div><div className="text-xs text-zinc-500">Avg deal {money(biz.sales?.avgDealSize ?? 0)}</div></div>
+          <div className="card animate-rise" style={{ animationDelay: "160ms" }}><div className="label mb-1">Ad spend per closed deal</div><div className="text-2xl font-bold">{money(sales.stages[3].value ? totals.spend / sales.stages[3].value : 0)}</div><div className="text-xs text-zinc-500">Avg deal {money(biz.sales?.avgDealSize ?? 0)}</div></div>
           <div className="card md:col-span-2 animate-rise"><div className="mb-3 font-semibold">Pipeline</div><Funnel stages={sales.stages} /></div>
           <div className="card animate-rise">
             <div className="mb-3 font-semibold">Deals by ad source</div>
@@ -175,7 +180,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {tab === "Connections" && (
+      {tab === "Connections" && live && <Connect live={live} />}
+      {tab === "Connections" && !live && (
         <div className="grid gap-3 md:grid-cols-3">
           {PLATFORMS.map((p, i) => (
             <div key={p.id} className="card flex items-center justify-between animate-rise" style={{ animationDelay: `${i * 50}ms` }}>
