@@ -1,10 +1,13 @@
-# Pending: private account reporting
+# Private account reporting — October 13, 2026
 
 - Added owner-restricted Google sign-in with Convex Auth; Clerk setup removed at owner request.
 - Added server-only OpenAI Ads delivery reporting, 30 complete days and five-minute refresh while visible.
 - Exact account/currency/timezone validation, pagination checks and private no-store responses.
 - Kept CSV imports browser-local and legacy Convex ad functions disabled.
-- Real Ads API account and empty delivery response verified. Hosted sign-in/reporting verification remains pending.
+- Google policy accepted with owner approval; basic identity credentials configured privately in Convex.
+- Real Google owner login, account reporting, sign-out and cleared private metrics verified locally and on `adsmaster.dreythomas.com/drey`.
+- The provider returned no delivery for September 13–October 12. Hosted unauthenticated requests return 401 with private, no-store headers.
+- Production release `2caa5c0` passed GitHub checks; Vercel deployment `dpl_EtVcU7ZbsiodeSyCSocXMP84oPvP` is Ready. Phone and desktop reporting views were checked.
 
 # Engineering changelog
 
