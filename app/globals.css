@@ -164,3 +164,10 @@ td .text-caption { font-size: 8px; letter-spacing: .06em; }
 @media (max-width: 360px) { .workspace-content,.sidebar { padding-left: 14px; padding-right: 14px; } .mix-content { flex-wrap: wrap; } .mix-legend { flex-basis: 100%; } .kpi strong { font-size: 22px; } .kpi .label { font-size: 8px; } .connection-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 @media (prefers-reduced-transparency: reduce) { .card,.sidebar,.glass-dialog { background: #1c2a2e; backdrop-filter: none; } }
+/* Private account reports reuse the workspace's glass and metal controls. */
+.account-report-header { display: flex; justify-content: space-between; gap: 1.5rem; align-items: center; }
+.account-report-header p { margin-top: .65rem; }
+.account-update { display: grid; gap: 1rem; }
+.auth-page { min-height: 100dvh; display: flex; flex-direction: column; gap: 2rem; align-items: center; justify-content: center; padding: 1.5rem; }
+.auth-page > article { width: min(100%, 44rem); }
+@media (max-width: 700px) { .account-report-header { align-items: flex-start; flex-direction: column; } }

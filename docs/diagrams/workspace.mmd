@@ -8,5 +8,12 @@ flowchart LR
   UI <--> Storage[(Browser localStorage)]
   UI --> Export[Download report CSV]
   Sample[Illustrative samples] -->|Explicit sample mode only| UI
-  UI -. disabled in public build .-> Convex[Original Convex scaffold]
-  Convex -. auth and provider verification pending .-> Providers[Ad platforms]
+  UI --> Google[Google sign-in]
+  Google --> Auth[Convex Auth in backend/]
+  Auth --> Owner[Verified owner email]
+  UI --> API[Private Next.js reporting endpoint]
+  API -->|Verify session and owner| Auth
+  API -->|Server-only key, GET requests| OpenAI[OpenAI Ads API: personal account only]
+  OpenAI -->|Spend, impressions, clicks| API
+  API -->|No-store response| UI
+  UI -. disabled .-> Legacy[Original convex/ scaffold: never deployed]
