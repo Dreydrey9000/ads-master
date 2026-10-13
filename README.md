@@ -60,11 +60,15 @@ Source structure: `components/Dashboard.tsx` owns workspace selection; `Overview
 
 ## Hosted workspace
 
-- App: https://ads.dreythomas.com
-- Drey personal workspace: https://ads.dreythomas.com/drey (starts empty)
+- App: https://adsmaster.dreythomas.com
+- Drey personal workspace: https://adsmaster.dreythomas.com/drey (starts empty)
 
 Both links use the same app and browser-local storage. The personal link selects Drey's Personal Ads; it is not a private account or a separate database. Reports from localhost must be exported and imported on the hosted domain. No reports are uploaded to Vercel.
 
-Deployment uses Vercel project `ads-master` in scope `dreys-projects-277f634a`. Link explicitly with `vercel link --yes --project ads-master --scope dreys-projects-277f634a`, run the checks above, then deploy with `vercel deploy --prod --scope dreys-projects-277f634a`. No provider secrets or environment variables are required. Cloudflare manages the `ads` DNS record; do not change the apex or other subdomains.
+Updates pushed or merged into `main` deploy automatically through the Vercel GitHub integration. Feature branches receive preview deployments. Open or refresh the app after a deployment to load the latest version; active forms are not force-reloaded. CI checks run on pushes and pull requests.
+
+Deployment uses Vercel project `ads-master` in scope `dreys-projects-277f634a`. Link explicitly with `vercel link --yes --project ads-master --scope dreys-projects-277f634a`, run the checks above, then deploy with `vercel deploy --prod --scope dreys-projects-277f634a`. No provider secrets or environment variables are required. Cloudflare manages the `adsmaster` DNS record; do not change the apex or other subdomains.
 
 This is a personal reporting tool, not a customer account service. A future plugin could validate an exported campaign CSV and open the app, but browser-local reports are not accessible to an authenticated MCP workflow. Plugin packaging is deferred until a useful customer workflow and account boundaries are implemented; nothing has been submitted or published as a plugin.
+
+The previous `ads.dreythomas.com` address remains available for exporting reports saved on that origin. Browser storage is separate for each hostname; import the exported CSV on the new address.

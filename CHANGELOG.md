@@ -19,3 +19,9 @@ Validation: production build, TypeScript, UI/copy gates and all 10 Playwright te
 - Prepared `ads.dreythomas.com` on Vercel with Cloudflare DNS.
 - Disabled the unauthenticated AI endpoint and forced unfinished Convex hooks off in public builds.
 - Added personal-route persistence, isolation, accessibility and disabled-endpoint checks.
+
+## Canonical domain and automatic deployment
+
+- Set `adsmaster.dreythomas.com` as the primary address, with `/drey` for the personal workspace.
+- Connect Vercel to GitHub `main` so future pushes publish updates automatically.
+- Keep the former hostname available so browser-local reports can be exported and moved.

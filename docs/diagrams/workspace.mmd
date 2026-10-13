@@ -1,4 +1,7 @@
 flowchart LR
+  Git[GitHub main push] --> Build[Vercel build]
+  Build --> Host[adsmaster.dreythomas.com]
+  Host --> UI
   User[User selects business] --> UI[Next.js glass workspace]
   CSV[Local CSV file] --> Validate[Validate and aggregate]
   Validate --> UI
