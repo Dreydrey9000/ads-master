@@ -20,5 +20,5 @@ const verdictStyle = {
 } as const;
 
 export function Verdict({ v }: { v: keyof typeof verdictStyle }) {
-  return <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase ${verdictStyle[v]}`}>{v}</span>;
+  return <span className={`rounded-full border px-2 py-0.5 text-caption font-semibold uppercase ${verdictStyle[v]}`}>{v}</span>;
 }

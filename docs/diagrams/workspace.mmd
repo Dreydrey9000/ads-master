@@ -1,0 +1,9 @@
+flowchart LR
+  User[User selects business] --> UI[Next.js glass workspace]
+  CSV[Local CSV file] --> Validate[Validate and aggregate]
+  Validate --> UI
+  UI <--> Storage[(Browser localStorage)]
+  UI --> Export[Download report CSV]
+  Sample[Illustrative samples] -->|Explicit sample mode only| UI
+  UI -. disabled in public build .-> Convex[Original Convex scaffold]
+  Convex -. auth and provider verification pending .-> Providers[Ad platforms]
