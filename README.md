@@ -1,15 +1,15 @@
 # Ads Master
 
-Drey's local advertising workspace, with a smoked-glass theme, business switching, and CSV report import/export.
+Drey's advertising workspace, with a smoked-glass theme, private ChatGPT Ads reporting, business switching, and browser-local CSV import/export.
 
 ## Use the app
 
 ```bash
 npm ci
-npm run dev -- --hostname 127.0.0.1 --port 3210
+npm run dev -- --port 3210
 ```
 
-Open http://127.0.0.1:3210. On this Mac, double-click `Launch Ads Master.command` to start the app and open it. Node.js 22+ is recommended.
+Open http://localhost:3210. Keep using the same hostname to retain browser-local CSV imports. Node.js 22+ is recommended.
 
 1. Select a business or choose **Add business**.
 2. Choose **Import report** and download the CSV template.
@@ -24,13 +24,31 @@ openai,50,300,2000,100,5
 
 The example above is fictional. Supported platform IDs: `meta`, `google`, `tiktok`, `linkedin`, `openai`, `youtube`. Amounts are USD; counts must be whole numbers. Duplicate platform rows are aggregated. Every import replaces the previous report for that business. Use matching reporting periods and attribution definitions; summed platform-attributed revenue can count the same purchase more than once.
 
-Reports and custom businesses are saved in this browser's local storage. There is no cloud sync, encryption-at-rest feature, multi-user account, or cross-browser persistence. Export reports before clearing browser data. CSVs stay in the browser; the import does not transmit them to an AI provider. Imported platform reports do not supply daily trends, individual creatives, AI recommendations, or pipeline events. Missing information stays empty. Sample mode is explicitly labeled throughout.
+Imported reports and custom businesses are saved in this browser's local storage. Export reports before clearing browser data. CSVs stay in the browser; imports do not transmit them to Vercel, Convex, or an AI provider. Imported platform reports do not supply daily trends, individual creatives, AI recommendations, or pipeline events. Missing information stays empty. Sample mode is explicitly labeled throughout.
+
+## Private account reports
+
+The personal workspace offers Google sign-in through Convex Auth. Only the verified Google email configured as `AUTH_OWNER_EMAIL` can sign in. The server independently checks the authenticated owner before reading the account API. Registration alone cannot grant access.
+
+The OpenAI Ads connector reads delivery for the last 30 completed days in America/New_York, in USD. It validates the account ID, currency and timezone, follows pagination, and rejects incomplete/invalid results. It fetches on opening the reporting view and every five minutes while visible; returning after five minutes refreshes it. There is no background scheduler when the view is closed. Results stay in memory and clear on sign-out. No public cache or localStorage contains connected reports.
+
+This connection covers **spend, impressions and clicks** only. Revenue and conversions are not fetched, and ad revenue is not cash available for personal purchases. Other platforms still use CSV imports. The server makes GET requests only; there are no campaign-write or budget-change endpoints. The platform-issued API key itself has broader management permissions, so keep it server-only.
+
+### Configuration
+
+Vercel production variables: `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`, `OPENAI_ADS_API_KEY` (Sensitive), `OPENAI_ADS_ACCOUNT_ID`. The Ads key is an **Advertiser API key**, not an OpenAI model key or conversion key. Never prefix it with `NEXT_PUBLIC_`.
+
+Convex variables: `SITE_URL`, `AUTH_OWNER_EMAIL`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `JWT_PRIVATE_KEY`, `JWKS`. Use separate auth signing keys for development and production. Google OAuth callbacks are `https://<deployment>.convex.site/api/auth/callback/google`; configure each approved deployment explicitly in Google Cloud. Keep Google identity scopes to openid, email and profile.
+
+Run `npx convex dev --once` for the development backend and `npx convex deploy` for production. `convex.json` deploys **only `backend/`**, containing authentication and the owner query. It does not deploy the original `convex/` scaffold. App builds work without provider configuration and fail closed for account reporting. Backend code changes must be deployed separately from the Vercel frontend.
+
+Before calling a connection live, verify a real Google sign-in, authenticated reporting, unauthenticated denial, wrong-user denial, and sign-out in the hosted app. The in-app update archive is `/updates`.
 
 ## Current boundaries
 
-The original Convex backend and provider adapters remain as **unfinished integration scaffolding**. Do not deploy them or enter real account credentials yet. Account ownership/auth checks, provider API verification, and authenticated end-to-end sync must be implemented and reviewed first. Merely setting `NEXT_PUBLIC_CONVEX_URL` is not a safe production setup. Leave it unset for local report use. This version does not change budgets, publish ads, or connect any ad accounts.
+The original `convex/` backend and provider adapters remain **unfinished, disabled integration scaffolding**. Do not deploy them or enter credentials there. `lib/live.ts` deliberately keeps this legacy path off, even when the separate authentication backend is configured. This version does not change budgets or publish ads.
 
-`app/api/insights` is disabled with HTTP 410 and makes no AI requests. The public build forces the Convex URL off, even if an environment variable is accidentally supplied. The named ads and consumer trends in sample mode are illustrative placeholders, not verified current research.
+`app/api/insights` is disabled with HTTP 410 and makes no AI requests. The named ads and consumer trends in sample mode are illustrative placeholders, not verified current research.
 
 ## Development and checks
 
@@ -63,12 +81,12 @@ Source structure: `components/Dashboard.tsx` owns workspace selection; `Overview
 - App: https://adsmaster.dreythomas.com
 - Drey personal workspace: https://adsmaster.dreythomas.com/drey (starts empty)
 
-Both links use the same app and browser-local storage. The personal link selects Drey's Personal Ads; it is not a private account or a separate database. Reports from localhost must be exported and imported on the hosted domain. No reports are uploaded to Vercel.
+Both links use the same app and browser-local storage for CSV imports. The personal link selects Drey's Personal Ads and offers a private connected reporting view. Imported CSVs are not protected by account login: anyone using the same browser profile can view them. Connected data requires the approved login and is fetched through Vercel. Reports imported on localhost must be exported and imported on the hosted domain.
 
 Updates pushed or merged into `main` deploy automatically through the Vercel GitHub integration. Feature branches receive preview deployments. Open or refresh the app after a deployment to load the latest version; active forms are not force-reloaded. CI checks run on pushes and pull requests.
 
-Deployment uses Vercel project `ads-master` in scope `dreys-projects-277f634a`. Link explicitly with `vercel link --yes --project ads-master --scope dreys-projects-277f634a`, run the checks above, then deploy with `vercel deploy --prod --scope dreys-projects-277f634a`. No provider secrets or environment variables are required. Cloudflare manages the `adsmaster` DNS record; do not change the apex or other subdomains.
+Deployment uses Vercel project `ads-master` in scope `dreys-projects-277f634a`. Link explicitly with `vercel link --yes --project ads-master --scope dreys-projects-277f634a`, run the checks above, then deploy with `vercel deploy --prod --scope dreys-projects-277f634a`. Private reporting requires the provider configuration above. Cloudflare manages the `adsmaster` DNS record; do not change the apex or other subdomains.
 
-This is a personal reporting tool, not a customer account service. A future plugin could validate an exported campaign CSV and open the app, but browser-local reports are not accessible to an authenticated MCP workflow. Plugin packaging is deferred until a useful customer workflow and account boundaries are implemented; nothing has been submitted or published as a plugin.
+This is a personal reporting tool, not a customer account service. A future plugin could give the approved owner a read-only delivery summary and link to `/drey`. That workflow would need authenticated MCP tools with the same owner and account checks; a skill alone cannot access private live reports. CSV validation is a separate possible skill and must not upload browser-local reports without consent. Start with one reporting tool, measure successful report reads and app opens, and budget support for expired sessions or account keys. Plugin packaging is deferred until hosted authentication and reporting are verified. No plugin has been submitted or published.
 
 The previous `ads.dreythomas.com` address remains available for exporting reports saved on that origin. Browser storage is separate for each hostname; import the exported CSV on the new address.

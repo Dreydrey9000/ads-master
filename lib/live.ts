@@ -1,14 +1,14 @@
 "use client";
 /**
- * Live data from Convex when NEXT_PUBLIC_CONVEX_URL is set, otherwise null (the UI falls back to demo data).
- * LIVE is a build-time constant, so the hook order never changes between renders.
+ * Legacy provider scaffold is disabled. Authentication uses the separate backend/ deployment.
  */
 import { useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { BUSINESSES } from "@/ads-master.config";
 
-export const LIVE = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
+// Legacy ad-account functions are not deployed. Convex is used only for verified auth.
+export const LIVE = false;
 
 function useLiveConvex(slug: string) {
   const syncConfig = useMutation(api.businesses.syncFromConfig);
