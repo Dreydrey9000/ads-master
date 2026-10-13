@@ -6,25 +6,34 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "npm run check:ui",
     "convex": "convex dev",
-    "dev:all": "npx convex dev & next dev"
+    "dev:all": "npx convex dev & next dev",
+    "typecheck": "tsc --noEmit",
+    "check:ui": "node scripts/check-ui.mjs",
+    "test:ui": "playwright test"
   },
   "dependencies": {
-    "convex": "^1.46.0",
+    "convex": "1.46.0",
     "lucide-react": "0.452.0",
-    "next": "14.2.15",
+    "next": "15.5.27",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "recharts": "2.12.7"
+    "recharts": "3.10.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "@playwright/test": "1.58.2",
     "@types/node": "20.16.11",
     "@types/react": "18.3.11",
     "@types/react-dom": "18.3.1",
     "autoprefixer": "10.4.20",
-    "postcss": "8.4.47",
+    "postcss": "8.5.30",
     "tailwindcss": "3.4.13",
     "typescript": "5.6.3"
+  },
+  "overrides": {
+    "postcss": "$postcss",
+    "playwright-core": "1.58.2"
   }
 }

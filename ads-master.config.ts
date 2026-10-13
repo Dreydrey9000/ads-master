@@ -15,6 +15,7 @@ export const APP = {
   currency: "USD",
 };
 
+export const PERSONAL_BUSINESS_ID = "drey-personal";
 export const BUSINESSES: BusinessConfig[] = [
   {
     id: "1bb",
@@ -37,5 +38,12 @@ export const BUSINESSES: BusinessConfig[] = [
     emoji: "💰",
     platforms: ["meta", "google", "openai", "linkedin"],
     sales: { enabled: true, avgDealSize: 2500, goalMonthly: 40000 },
+  },
+  {
+    id: PERSONAL_BUSINESS_ID,
+    name: "Drey's Personal Ads",
+    industry: "Personal brand",
+    emoji: "✨",
+    platforms: ["meta", "google", "tiktok", "linkedin", "openai", "youtube"],
   },
 ];

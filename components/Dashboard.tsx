@@ -1,118 +1,84 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { Sparkles, TrendingUp, TrendingDown, Minus, Flame, Plug, Plus, Trophy } from "lucide-react";
-import { APP, BUSINESSES as CONFIG_BUSINESSES } from "@/ads-master.config";
+import { useEffect, useState } from "react";
+import { Sparkles, TrendingUp, TrendingDown, Minus, Flame, Plus, LayoutDashboard, Compass, BarChart3, Plug, ArrowDownToLine, Upload, ChevronRight, ArrowUpRight } from "lucide-react";
+import { APP, PERSONAL_BUSINESS_ID, BUSINESSES as CONFIG_BUSINESSES } from "@/ads-master.config";
 import { getMetrics, getAds, getInsights, getSales, WINNING_ADS, SPEND_TRENDS } from "@/lib/data/demo";
-import { PLATFORMS, platformById } from "@/lib/platforms";
+import { PLATFORMS } from "@/lib/platforms";
 import type { Business } from "@/lib/types";
 import { money, PlatformDot, Verdict } from "./ui";
-import { MiniArea, MiniDonut, MiniBars, GoalRing, Funnel, useCountUp } from "./charts";
+import { MiniBars, GoalRing, Funnel } from "./charts";
 import AddBusiness from "./AddBusiness";
 import Connect from "./Connect";
+import ImportReport from "./ImportReport";
+import Overview from "./Overview";
 import { useLive } from "@/lib/live";
+import { downloadReport, type Report } from "@/lib/reports";
 
 const BASE_TABS = ["Overview", "AI Insights", "Winning Ads", "Spend Trends", "Connections"] as const;
 type Tab = (typeof BASE_TABS)[number] | "Sales";
+const ICONS = { Overview: LayoutDashboard, Sales: BarChart3, "AI Insights": Sparkles, "Winning Ads": Compass, "Spend Trends": TrendingUp, Connections: Plug };
 const STORE = "adsmaster.businesses";
+const REPORT_STORE = "adsmaster.reports.v1";
 
-function Kpi({ label, value, fmt, delay = 0 }: { label: string; value: number; fmt: (n: number) => string; delay?: number }) {
-  const v = useCountUp(value);
-  return <div className="card animate-rise" style={{ animationDelay: `${delay}ms` }}><div className="label">{label}</div><div className="mt-1 text-2xl font-bold tabular-nums">{fmt(v)}</div></div>;
-}
-
-export default function Dashboard() {
+export default function Dashboard({ personal = false }: { personal?: boolean }) {
   const [custom, setCustom] = useState<Business[]>([]);
-  const [adding, setAdding] = useState(false);
-  useEffect(() => { try { setCustom(JSON.parse(localStorage.getItem(STORE) ?? "[]")); } catch {} }, []);
-  const businesses = [...CONFIG_BUSINESSES, ...custom];
-  const [bizId, setBizId] = useState(businesses[0].id);
-  const biz = businesses.find((b) => b.id === bizId) ?? businesses[0];
-  const tabs: Tab[] = biz.sales?.enabled ? ["Overview", "Sales", ...BASE_TABS.slice(1)] : [...BASE_TABS];
+  const [reports, setReports] = useState<Record<string, Report>>({});
+  const [adding, setAdding] = useState(false), [importing, setImporting] = useState(false);
+  const [storageError, setStorageError] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [sample, setSample] = useState(!personal);
+  const [bizId, setBizId] = useState(personal ? PERSONAL_BUSINESS_ID : CONFIG_BUSINESSES[0].id);
   const [tab, setTab] = useState<Tab>("Overview");
-  useEffect(() => { if (tab === "Sales" && !biz.sales?.enabled) setTab("Overview"); }, [biz, tab]);
-
-  // Live Convex data wins wherever it exists; demo fills the gaps so the UI never looks empty.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE) ?? '[]');
+      if (!Array.isArray(saved) || saved.some(b => !b || typeof b.id !== 'string' || typeof b.name !== 'string' || !Array.isArray(b.platforms) || !b.platforms.length || b.platforms.some((p: string) => !PLATFORMS.some(x => x.id === p)))) throw new Error('Invalid businesses');
+      setCustom(saved);
+      const savedReports = JSON.parse(localStorage.getItem(REPORT_STORE) ?? '{}');
+      if (!savedReports || Array.isArray(savedReports) || typeof savedReports !== 'object' || Object.values(savedReports).some((r: any) => !r || !Array.isArray(r.metrics) || r.metrics.some((m: any) => !m || !PLATFORMS.some(p => p.id === m.platform) || !['spend','revenue','impressions','clicks','conversions'].every(k => typeof m[k] === 'number' && Number.isFinite(m[k]) && m[k] >= 0) || !Array.isArray(m.trend)))) throw new Error('Invalid reports');
+      setReports(savedReports);
+      const selected = personal ? PERSONAL_BUSINESS_ID : localStorage.getItem('adsmaster.selected') || CONFIG_BUSINESSES[0].id;
+      setBizId(selected); if (selected === PERSONAL_BUSINESS_ID || savedReports[selected] || saved.some((b: Business) => b.id === selected)) setSample(false);
+    } catch { setStorageError('Saved workspace could not be read. Original browser storage is unchanged. Export any visible report before resetting browser data.'); }
+    finally { setLoaded(true); }
+  }, [personal]);
+  const businesses = [...CONFIG_BUSINESSES, ...custom];
+  const biz = businesses.find(b => b.id === bizId) ?? businesses[0];
+  const tabs: Tab[] = biz.sales?.enabled ? ["Overview", "Sales", ...BASE_TABS.slice(1)] : [...BASE_TABS];
+  useEffect(() => { if (tab === "Sales" && !biz.sales?.enabled) setTab("Overview"); }, [biz.sales?.enabled, tab]);
+  useEffect(() => { document.title = `${tab} | Ads Master`; }, [tab]);
   const live = useLive(biz.id);
-  const metrics = useMemo(() => (live?.hasAdData ? live.metrics : getMetrics(biz)), [biz, live]);
-  const ads = useMemo(() => (live?.hasAdData ? live.ads : getAds(biz)), [biz, live]);
-  const insights = useMemo(() => (live?.insights.length ? live.insights : getInsights(biz)), [biz, live]);
-  const sales = useMemo(() => (!biz.sales?.enabled ? null : live?.sales?.hasData ? live.sales : getSales(biz)), [biz, live]);
-  const isLive = Boolean(live?.hasAdData);
-  const totals = useMemo(() => {
-    const spend = metrics.reduce((s, m) => s + m.spend, 0), revenue = metrics.reduce((s, m) => s + m.revenue, 0), conv = metrics.reduce((s, m) => s + m.conversions, 0);
-    return { spend, revenue, roas: spend ? revenue / spend : 0, cpa: conv ? spend / conv : 0 };
-  }, [metrics]);
-  const mix = metrics.map((m) => ({ name: platformById[m.platform].name, value: m.spend, color: platformById[m.platform].color }));
+  const report = reports[biz.id];
+  const isLive = !sample && !report && Boolean(live?.hasAdData);
+  const metrics = sample ? getMetrics(biz) : report ? report.metrics : live?.hasAdData ? live.metrics : [];
+  const ads = sample ? getAds(biz) : isLive ? live?.ads ?? [] : [];
+  const insights = sample ? getInsights(biz) : isLive ? live?.insights ?? [] : [];
+  const sales = !biz.sales?.enabled ? null : sample ? getSales(biz) : live?.sales?.hasData ? live.sales : null;
+  const totals = { spend: metrics.reduce((s, m) => s + m.spend, 0) };
+  const selectBusiness = (id: string) => { setBizId(id); setSample(id !== PERSONAL_BUSINESS_ID && !custom.some(b => b.id === id) && !reports[id]); try { localStorage.setItem('adsmaster.selected', id); } catch { setStorageError('Business selection could not be remembered in this browser.'); } };
+  const addBiz = (b: Business) => { const next = [...custom, b]; localStorage.setItem(STORE, JSON.stringify(next)); setCustom(next); selectBusiness(b.id); setSample(false); setAdding(false); };
+  const saveReport = (r: Report) => { const next = { ...reports, [biz.id]: r }; localStorage.setItem(REPORT_STORE, JSON.stringify(next)); setReports(next); setSample(false); setImporting(false); setTab('Overview'); };
+  const researchTab = tab === 'Winning Ads' || tab === 'Spend Trends';
 
-  const addBiz = (b: Business) => { const next = [...custom, b]; setCustom(next); localStorage.setItem(STORE, JSON.stringify(next)); setBizId(b.id); setAdding(false); };
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-6 md:px-8">
-      <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-lg font-black animate-glow">A</div>
-          <div><h1 className="text-xl font-bold tracking-tight">{APP.name}</h1><p className="text-xs text-zinc-500">{APP.tagline}</p></div>
-        </div>
-        <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${isLive ? "border-good/50 text-good" : "border-ink-600 text-zinc-500"}`}>{isLive ? "● Live" : "Demo data"}</span>
-      </header>
-
-      {/* Business switcher */}
-      <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
-        {businesses.map((b) => (
-          <button key={b.id} onClick={() => setBizId(b.id)}
-            className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm transition active:scale-95 ${b.id === biz.id ? "border-accent bg-accent/20 text-white" : "border-ink-700 bg-ink-900 text-zinc-400 hover:text-white"}`}>
-            <span>{b.emoji ?? "🏢"}</span>{b.name}{b.sales?.enabled && <span className="rounded bg-good/20 px-1.5 text-[10px] text-good">SALES</span>}
-          </button>
-        ))}
-        <button onClick={() => setAdding(true)} className="flex shrink-0 items-center gap-1 rounded-xl border border-dashed border-ink-600 px-3 py-2 text-sm text-zinc-500 hover:border-accent hover:text-white"><Plus className="h-4 w-4" /> Add business</button>
-      </div>
-
-      <nav className="mb-6 flex gap-1 overflow-x-auto border-b border-ink-700">
-        {tabs.map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm transition ${tab === t ? "border-accent text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}>{t}</button>
-        ))}
-      </nav>
-
-      <div key={biz.id + tab}>
-      {tab === "Overview" && (
-        <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Kpi label="Spend (30d)" value={totals.spend} fmt={money} />
-            <Kpi label="Revenue" value={totals.revenue} fmt={money} delay={60} />
-            <Kpi label="Blended ROAS" value={totals.roas} fmt={(n) => `${n.toFixed(2)}x`} delay={120} />
-            <Kpi label="Blended CPA" value={totals.cpa} fmt={money} delay={180} />
-          </div>
-          <div className="grid gap-3 md:grid-cols-[220px_1fr]">
-            <div className="card flex items-center gap-4 animate-rise">
-              <MiniDonut data={mix} size={88} />
-              <div className="space-y-1 text-xs">{mix.map((m) => <div key={m.name} className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: m.color }} />{m.name}</div>)}<div className="label pt-1">Spend mix</div></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-              {metrics.map((m, i) => {
-                const p = platformById[m.platform], roas = m.spend ? m.revenue / m.spend : 0;
-                return (
-                  <div key={m.platform} className="card animate-rise !p-4" style={{ animationDelay: `${i * 70}ms` }}>
-                    <div className="flex items-center justify-between"><PlatformDot id={m.platform} /><span className={`text-sm font-bold ${roas >= 3 ? "text-good" : roas >= 2 ? "text-bad" : "text-ugly"}`}>{roas.toFixed(1)}x</span></div>
-                    <MiniArea data={m.trend} color={p.color} h={32} />
-                    <div className="flex justify-between text-[11px] text-zinc-500"><span>{money(m.spend)}</span><span>{m.impressions ? ((m.clicks / m.impressions) * 100).toFixed(2) : "0.00"}% CTR</span></div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="card overflow-x-auto animate-rise">
-            <div className="mb-3 flex items-center gap-2 font-semibold"><Trophy className="h-4 w-4 text-bad" /> Your ads, ranked</div>
-            <table className="w-full min-w-[560px] text-sm">
-              <thead className="text-left text-zinc-500"><tr><th className="pb-2">Ad</th><th>Platform</th><th>Spend</th><th>ROAS</th><th>CTR</th><th>Verdict</th></tr></thead>
-              <tbody>{ads.map((a) => (
-                <tr key={a.id} className="border-t border-ink-700 transition hover:bg-ink-800/60">
-                  <td className="py-2 pr-4">{a.name}</td><td><PlatformDot id={a.platform} /></td><td>{money(a.spend)}</td><td>{a.roas}x</td><td>{a.ctr}%</td><td><Verdict v={a.verdict} /></td>
-                </tr>))}</tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
+  return <div className="app-shell">
+    <a className="skip-link" href="#workspace">Skip to workspace</a>
+    <aside className="sidebar">
+      <a href="/" className="brand"><span className="brand-mark">a<span>m</span></span><span>{APP.name}<small>BY DREY</small></span></a>
+      <div className="workspace-label label">Your workspace</div>
+      <label className="business-select"><span className="small muted">Business</span><select value={biz.id} onChange={e => selectBusiness(e.target.value)} aria-label="Select business">{businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
+      <button className="add-business" onClick={() => setAdding(true)} disabled={!loaded || !!storageError}><Plus size={16} aria-hidden="true" /> Add business</button>
+      <div className="nav-label label">Manage & discover</div>
+      <nav aria-label="Main navigation">{tabs.map(t => { const Icon = ICONS[t]; return <button key={t} aria-current={tab === t ? 'page' : undefined} onClick={() => setTab(t)}><Icon size={18} aria-hidden="true" />{t}{tab === t && <span className="nav-dot" />}</button>; })}</nav>
+      <div className="sidebar-bottom"><div className="local-dot" /><span>Local workspace<small>Saved in this browser</small></span></div>
+    </aside>
+    <main id="workspace" className="workspace" tabIndex={-1}>
+      <header className="topbar"><span>{biz.name}<ChevronRight size={14} aria-hidden="true" /><span>{tab}</span></span><span className={`source-pill ${sample ? '' : 'real'}`}><span />{sample ? 'Sample workspace' : isLive ? 'Connected data' : report ? 'Imported report' : 'Your workspace'}</span></header>
+      <div className="workspace-content">
+        <div className="page-heading"><div><p className="eyebrow">{biz.industry} / AD PERFORMANCE</p><h1>{tab === 'Overview' ? 'Make every ad count.' : tab}</h1><p className="muted">{tab === 'Overview' ? 'A clear view of your spend. A better sense of what works.' : `Your ${biz.name} workspace.`}</p></div><div className="heading-actions"><button className="metal-button" disabled={!metrics.length} onClick={() => downloadReport(metrics, `${biz.id}-${sample ? 'sample' : 'report'}.csv`)}><ArrowDownToLine size={16} aria-hidden="true" />Export</button><button className="metal-button primary" disabled={!loaded || !!storageError} onClick={() => setImporting(true)}><Upload size={16} aria-hidden="true" />Import report</button></div></div>
+        {storageError && <p className="error-message" role="alert">{storageError}</p>}
+        <div className="data-notice"><div><span className="notice-dot" /><p><strong>{sample ? 'You’re exploring sample data.' : report ? report.period : 'Your business, your results.'}</strong><span>{sample ? 'All numbers, insights, ad examples, and trends here are illustrative.' : report ? `Imported ${new Date(report.importedAt).toLocaleDateString()} · ${report.name} · USD` : isLive ? 'Showing connected platform data.' : 'Import a CSV report to start. No ad account is connected.'}</span></p></div><button className="notice-button" onClick={() => setSample(!sample)}>{sample ? 'Use my data' : 'Explore sample'}<ArrowUpRight size={14} aria-hidden="true" /></button></div>
+        {!loaded ? <div className="card" role="status"><span className="thinking-orb" /> Opening your workspace…</div> : <div key={biz.id + tab} className="panel-enter">
+          {tab === 'Overview' && <Overview metrics={metrics} ads={ads} sample={sample} onImport={() => setImporting(true)} />}
       {tab === "Sales" && sales && (
         <div className="grid gap-4 md:grid-cols-3">
           <div className="card flex items-center gap-4 animate-rise">
@@ -124,14 +90,14 @@ export default function Dashboard() {
           <div className="card md:col-span-2 animate-rise"><div className="mb-3 font-semibold">Pipeline</div><Funnel stages={sales.stages} /></div>
           <div className="card animate-rise">
             <div className="mb-3 font-semibold">Deals by ad source</div>
-            <div className="space-y-2">{sales.bySource.sort((a, b) => b.revenue - a.revenue).map((s) => (
+            <div className="space-y-2">{[...sales.bySource].sort((a, b) => b.revenue - a.revenue).map((s) => (
               <div key={s.platform} className="flex items-center justify-between text-sm"><PlatformDot id={s.platform} /><span className="text-zinc-400">{s.deals} deals · <span className="text-white">{money(s.revenue)}</span></span></div>
             ))}</div>
           </div>
         </div>
       )}
 
-      {tab === "AI Insights" && (
+      {tab === "AI Insights" && (sample || live?.insights.length) && (
         <div className="grid gap-4 md:grid-cols-3">
           {(["good", "bad", "ugly"] as const).map((v, col) => (
             <div key={v} className="space-y-3">
@@ -149,11 +115,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {tab === "Winning Ads" && (
+      {tab === "Winning Ads" && sample && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {WINNING_ADS.map((w, i) => (
             <div key={w.brand} className="card space-y-2 animate-rise" style={{ animationDelay: `${i * 60}ms` }}>
-              <div className="flex items-center justify-between"><PlatformDot id={w.platform} /><span className="flex items-center gap-1 text-xs text-bad"><Flame className="h-3 w-3" />{w.runningDays} days live</span></div>
+              <div className="flex items-center justify-between"><PlatformDot id={w.platform} /><span className="flex items-center gap-1 text-xs text-bad"><Flame className="h-3 w-3" />{w.runningDays} sample days</span></div>
               <div className="font-semibold">{w.brand}</div>
               <p className="text-sm text-zinc-300">{w.hook}</p>
               <div className="h-1.5 overflow-hidden rounded-full bg-ink-700"><div className="h-full rounded-full bg-bad transition-all duration-1000" style={{ width: `${Math.min(100, w.runningDays / 1.2)}%` }} /></div>
@@ -163,9 +129,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      {tab === "Spend Trends" && (
+      {tab === "Spend Trends" && sample && (
         <div className="space-y-3">
-          <p className="text-sm text-zinc-400">Where people are spending right now, and what it means for {biz.name}.</p>
+          <p className="text-sm text-zinc-400">Illustrative consumer trends for exploring the dashboard. These are not current market research.</p>
           {SPEND_TRENDS.map((s, i) => {
             const Icon = s.impact === "tailwind" ? TrendingUp : s.impact === "headwind" ? TrendingDown : Minus;
             const c = s.impact === "tailwind" ? "text-good" : s.impact === "headwind" ? "text-ugly" : "text-zinc-400";
@@ -180,20 +146,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      {tab === "Connections" && live && <Connect live={live} />}
-      {tab === "Connections" && !live && (
-        <div className="grid gap-3 md:grid-cols-3">
-          {PLATFORMS.map((p, i) => (
-            <div key={p.id} className="card flex items-center justify-between animate-rise" style={{ animationDelay: `${i * 50}ms` }}>
-              <PlatformDot id={p.id} />
-              <button className="flex items-center gap-1 rounded-lg border border-ink-600 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-accent active:scale-95"><Plug className="h-3 w-3" /> {biz.platforms.includes(p.id) ? "Connect" : "Add"}</button>
-            </div>
-          ))}
-        </div>
-      )}
-      </div>
 
-      {adding && <AddBusiness onAdd={addBiz} onClose={() => setAdding(false)} />}
-    </div>
-  );
+          {((researchTab && !sample) || (tab === 'AI Insights' && !insights.length) || (tab === 'Sales' && !sales)) && <section className="card empty-state"><Sparkles size={28} aria-hidden="true" /><h2>{researchTab ? 'Research feeds are not connected yet.' : tab === 'Sales' ? 'No sales events yet.' : 'No verified insights yet.'}</h2><p>{tab === 'AI Insights' ? 'Imported reports show measured results. AI recommendations need a verified data connection.' : tab === 'Sales' ? 'Campaign CSVs do not contain pipeline events. Explore the sample to preview the sales view.' : 'Explore the sample workspace to preview this view. Its examples are illustrative.'}</p><button className="metal-button" onClick={() => setSample(true)}>Explore sample</button></section>}
+          {tab === 'Connections' && live && <Connect live={live} />}
+          {tab === 'Connections' && !live && <div className="connections-layout"><section className="card connection-intro"><span className="eyebrow">START WITH A REPORT</span><h2>Your platforms, together.</h2><p className="muted">Import platform totals today. Direct sync needs a secured backend and verified provider access before it can be enabled.</p><button className="metal-button primary" onClick={() => setImporting(true)}>Import a CSV report <ArrowUpRight size={16} aria-hidden="true" /></button></section><div className="connection-grid">{PLATFORMS.map(p => <div className="card connection-card" key={p.id}><PlatformDot id={p.id} /><span className="small muted">Not connected</span><span className="small">CSV import available</span></div>)}</div></div>}
+        </div>}
+        <footer className="workspace-footer"><span>ADS MASTER <span className="muted">/</span> DREY</span><span>{sample ? 'Illustrative data · no campaigns changed' : 'Local reports · no campaigns changed'}</span></footer>
+      </div>
+    </main>
+    {adding && <AddBusiness onAdd={addBiz} onClose={() => setAdding(false)} />}
+    {importing && <ImportReport business={biz.name} onSave={saveReport} onClose={() => setImporting(false)} />}
+  </div>;
 }
