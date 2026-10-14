@@ -27,6 +27,8 @@ function ConnectedAccountReports() {
   const { isLoading, isAuthenticated: isSignedIn } = useConvexAuth();
   const isLoaded = !isLoading;
   const user = useQuery(makeFunctionReference<'query', Record<string, never>, { id: string; isOwner: boolean } | null>('viewer:current'), isSignedIn ? {} : 'skip');
+  const [provider, setProvider] = useState<'openai' | 'meta' | 'google'>('openai');
+  const providerName = { openai: 'ChatGPT Ads', meta: 'Meta Ads', google: 'Google / YouTube Ads' }[provider];
   const [report, setReport] = useState<AccountReport | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,7 +37,7 @@ function ConnectedAccountReports() {
   const lastFetch = useRef(0);
   useEffect(() => {
     if (!user) return;
-    try { setShowUpdate(localStorage.getItem(`adsmaster.update.account-reports.${user.id}`) !== 'seen'); } catch { setShowUpdate(true); }
+    try { setShowUpdate(localStorage.getItem(`adsmaster.update.multi-platform-reports.${user.id}`) !== 'seen'); } catch { setShowUpdate(true); }
   }, [user]);
   useEffect(() => {
     setReport(null); setError('');
@@ -47,7 +49,7 @@ function ConnectedAccountReports() {
       if (pending || document.hidden) return;
       pending = true; setLoading(true); lastFetch.current = Date.now();
       try {
-        const response = await fetch('/api/reports/openai', { cache: 'no-store', signal: controller.signal });
+        const response = await fetch(`/api/reports/${provider}`, { cache: 'no-store', signal: controller.signal });
         const body = await response.json();
         if (!active) return;
         if (!response.ok) { setError(errors[body.error] ?? errors.PROVIDER_ERROR); setReport(null); }
@@ -60,26 +62,29 @@ function ConnectedAccountReports() {
     const visible = () => { if (!document.hidden && Date.now() - lastFetch.current >= 5 * 60 * 1000) void load(); };
     document.addEventListener('visibilitychange', visible);
     return () => { active = false; controller.abort(); window.clearInterval(interval); document.removeEventListener('visibilitychange', visible); };
-  }, [isSignedIn, user?.id, refresh]);
+  }, [isSignedIn, user?.id, refresh, provider]);
 
   function dismissUpdate() {
-    try { localStorage.setItem(`adsmaster.update.account-reports.${user?.id}`, 'seen'); } catch { /* Remains available on the next visit. */ }
+    try { localStorage.setItem(`adsmaster.update.multi-platform-reports.${user?.id}`, 'seen'); } catch { /* Remains available on the next visit. */ }
     setShowUpdate(false);
   }
 
   return <section className="overview-stack" aria-label="Automatic account reports">
     <div className="card account-report-header">
-      <div><p className="eyebrow">PERSONAL ACCOUNT / CHATGPT ADS</p><h2>Your account, automatically.</h2><p className="muted">Private reporting for Drey Thomas. Refreshes every five minutes while this view is open.</p></div>
+      <div><p className="eyebrow">PERSONAL ACCOUNT / {providerName.toUpperCase()}</p><h2>Your account, automatically.</h2><p className="muted">Private reporting for Drey Thomas. Refreshes every five minutes while this view is open.</p></div>
       <div className="heading-actions">{isSignedIn && <AccountSignOut />}{!isLoaded ? <span role="status">Checking sign-in…</span> : isSignedIn ? <button className="metal-button" disabled={loading} onClick={() => setRefresh(n => n + 1)}>Refresh reports</button> : <AccountSignIn />}</div>
     </div>
-    {showUpdate && isSignedIn && <aside className="card account-update"><h2>New: automatic account reports</h2><p>Once your owner login and account key are connected, this view pulls your ChatGPT Ads spend, impressions, and clicks. CSV imports are still available for other platforms.</p><p className="small muted">Only your personal account is used here. Reporting does not change campaigns or budgets.</p><div className="heading-actions"><a className="metal-button" href="/updates">See what changed</a><button className="metal-button" onClick={dismissUpdate}>Got it</button></div></aside>}
+    {showUpdate && isSignedIn && <aside className="card account-update"><h2>New: Meta and Google reports</h2><p>Choose ChatGPT Ads, Meta, or Google / YouTube below to read spend, impressions, and clicks directly from your accounts. Reports load when you open a platform and refresh every five minutes while visible. TikTok and LinkedIn still need account setup.</p><p className="small muted">Only your personal account is used here. Reporting does not change campaigns or budgets.</p><div className="heading-actions"><a className="metal-button" href="/updates">See what changed</a><button className="metal-button" onClick={dismissUpdate}>Got it</button></div></aside>}
+    {isSignedIn && <div className="heading-actions reporting-platforms" role="group" aria-label="Reporting platform">{(['openai', 'meta', 'google'] as const).map(id => <button key={id} className={`metal-button${provider === id ? ' primary' : ''}`} aria-pressed={provider === id} onClick={() => { if (provider !== id) { setReport(null); setError(''); setProvider(id); } }}>{ {openai: 'ChatGPT Ads', meta: 'Meta Ads', google: 'Google / YouTube Ads'}[id] }</button>)}</div>}
     {loading && <div className="card" role="status"><span className="thinking-orb" /> Reading your account report…</div>}
     {error && <div className="card error-message" role="alert"><h2>Reports need attention</h2><p>{error}</p><p className="small">You can still import a CSV using the button above.</p></div>}
     {!isSignedIn && isLoaded && <div className="card"><h2>Your reports stay private.</h2><p className="muted">Sign in with your approved owner account to view connected results. A new login does not automatically gain access.</p></div>}
     {isSignedIn && report && <>
+      <p className="small muted">{report.accountName} · {providerName}</p>
+      {report.connectionNote && <p className="small muted">{report.connectionNote}</p>}
       <p className="small muted">{report.since} – {report.until} · 30 completed days · New York time · Updated {new Date(report.fetchedAt).toLocaleString()}</p>
       <div className="kpi-grid">{[
-        ['Ad spend', money(report.totals.spend), 'USD · reported by ChatGPT Ads'],
+        ['Ad spend', money(report.totals.spend), `USD · reported by ${providerName}`],
         ['Impressions', report.totals.impressions.toLocaleString(), 'Times your ads were shown'],
         ['Clicks', report.totals.clicks.toLocaleString(), 'Reported ad clicks'],
         ['Click-through rate', report.totals.impressions ? `${(report.totals.clicks / report.totals.impressions * 100).toFixed(2)}%` : '—', 'Clicks ÷ impressions'],

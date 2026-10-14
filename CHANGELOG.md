@@ -36,3 +36,10 @@ Validation: production build, TypeScript, UI/copy gates and all 10 Playwright te
 - Set `adsmaster.dreythomas.com` as the primary address, with `/drey` for the personal workspace.
 - Connect Vercel to GitHub `main` so future pushes publish updates automatically.
 - Keep the former hostname available so browser-local reports can be exported and moved.
+
+## 2026-10-14 — Meta and Google reporting
+
+- Added owner-protected Meta and Google reporting routes, bounded pagination, account/currency/timezone validation and no-store responses.
+- Google service-account access is read-only; access tokens renew on demand. Meta uses ads_read and can require reconnection on expiry.
+- Personal workspace selects ChatGPT, Meta or Google/YouTube reports, with independent errors and a once-per-login-user update notice. No campaign or budget writes.
+- Real Meta and Google API reads verified; both returned no delivery in the completed 30-day window. TikTok and LinkedIn remain unconnected.

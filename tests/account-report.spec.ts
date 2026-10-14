@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { isReportOwner } from '../lib/report-access';
-import { parseDeliveryRows, reportWindow } from '../lib/account-report';
+import { parseDeliveryRows, reportWindow, finishReport } from '../lib/account-report';
 
 test('private reporting fails closed and does not authorize other users', () => {
   expect(isReportOwner(null, 'owner')).toBe(false);
@@ -17,9 +17,17 @@ test('delivery parser preserves zero and rejects missing, invalid, or negative m
   expect(parseDeliveryRows([row])).toEqual([{ date: '2026-10-01', spend: 0, impressions: 0, clicks: 0 }]);
   for (const spend of [null, undefined, '', -1, 'NaN', Infinity]) expect(() => parseDeliveryRows([{ ...row, spend }])).toThrow();
 });
-test('unauthenticated reporting requests never expose account data', async ({ request }) => {
-  const response = await request.get('/api/reports/openai');
+for (const provider of ['openai', 'meta', 'google']) test(`unauthenticated ${provider} reporting never exposes account data`, async ({ request }) => {
+  const response = await request.get(`/api/reports/${provider}`);
   expect([401, 503]).toContain(response.status());
   expect(response.headers()['cache-control']).toContain('no-store');
   expect(await response.json()).toEqual({ error: response.status() === 401 ? 'SIGN_IN' : 'NOT_CONFIGURED' });
+});
+
+test('provider totals reject duplicate dates, out-of-window rows and fractional counts', () => {
+  const window = { since: '2026-10-01', until: '2026-10-02' };
+  const day = { date: '2026-10-01', spend: 1.25, impressions: 20, clicks: 2 };
+  expect(finishReport('Test', window, [day]).totals.spend).toBe(1.25);
+  expect(finishReport('Test', window, []).totals).toEqual({spend:0,impressions:0,clicks:0});
+  for (const days of [[day, day], [{ ...day, date: '2026-09-30' }], [{ ...day, clicks: 1.5 }]]) expect(() => finishReport('Test', window, days)).toThrow('INVALID_REPORT');
 });
