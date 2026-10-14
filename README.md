@@ -1,6 +1,6 @@
 # Ads Master
 
-Drey's advertising workspace, with a smoked-glass theme, private ChatGPT Ads reporting, business switching, and browser-local CSV import/export.
+Drey's advertising workspace, with a smoked-glass theme, private ChatGPT, Meta and Google Ads reporting, business switching, and browser-local CSV import/export.
 
 ## Use the app
 
@@ -30,13 +30,15 @@ Imported reports and custom businesses are saved in this browser's local storage
 
 The personal workspace offers Google sign-in through Convex Auth. Only the verified Google email configured as `AUTH_OWNER_EMAIL` can sign in. The server independently checks the authenticated owner before reading the account API. Registration alone cannot grant access.
 
-The OpenAI Ads connector reads delivery for the last 30 completed days in America/New_York, in USD. It validates the account ID, currency and timezone, follows pagination, and rejects incomplete/invalid results. It fetches on opening the reporting view and every five minutes while visible; returning after five minutes refreshes it. There is no background scheduler when the view is closed. Results stay in memory and clear on sign-out. No public cache or localStorage contains connected reports.
+The OpenAI, Meta and Google Ads connectors read delivery for the last 30 completed days in America/New_York, in USD. Each validates the account ID, currency and timezone, follows pagination, and rejects incomplete/invalid results. The selected platform fetches on opening the reporting view and every five minutes while visible; returning after five minutes refreshes it. There is no background scheduler when the view is closed. Results stay in memory and clear on sign-out. No public cache or localStorage contains connected reports.
 
-This connection covers **spend, impressions and clicks** only. Revenue and conversions are not fetched, and ad revenue is not cash available for personal purchases. Other platforms still use CSV imports. The server makes GET requests only; there are no campaign-write or budget-change endpoints. The platform-issued API key itself has broader management permissions, so keep it server-only.
+This connection covers **spend, impressions and clicks** only. Revenue and conversions are not fetched, and ad revenue is not cash available for personal purchases. TikTok and LinkedIn await provider setup. Meta uses GET; Google uses its read-only Search RPC via POST and service-account OAuth; there are no campaign-write or budget-change endpoints. The OpenAI key has broader management permissions; Meta has ads_read and Google has account-level Read only access. All credentials remain server-only. Google access tokens renew on demand. Meta user tokens expire and require reconnection; no perpetual-login guarantee is made.
 
 ### Configuration
 
 Vercel production variables: `NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CONVEX_SITE_URL`, `OPENAI_ADS_API_KEY` (Sensitive), `OPENAI_ADS_ACCOUNT_ID`. The Ads key is an **Advertiser API key**, not an OpenAI model key or conversion key. Never prefix it with `NEXT_PUBLIC_`.
+
+Additional Vercel variables: `META_ADS_ACCESS_TOKEN` (Sensitive), `META_ADS_ACCOUNT_ID` (`act_...`), `GOOGLE_ADS_SERVICE_ACCOUNT_JSON` (Sensitive JSON), `GOOGLE_ADS_CUSTOMER_ID` (10 digits). Meta API v26.0 and Google Ads v25 are pinned to verified working endpoints. Enable Google Ads API and obtain Explorer access in Google Cloud; give the service account **Read only** access directly to the advertiser account. No Google Cloud project roles or manager linkage are needed. Store credentials using `vercel env add` with stdin, never commit them.
 
 Convex variables: `SITE_URL`, `AUTH_OWNER_EMAIL`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `JWT_PRIVATE_KEY`, `JWKS`. Use separate auth signing keys for development and production. Google OAuth callbacks are `https://<deployment>.convex.site/api/auth/callback/google`; configure each approved deployment explicitly in Google Cloud. Keep Google identity scopes to openid, email and profile.
 

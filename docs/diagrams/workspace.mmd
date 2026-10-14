@@ -11,9 +11,13 @@ flowchart LR
   UI --> Google[Google sign-in]
   Google --> Auth[Convex Auth in backend/]
   Auth --> Owner[Verified owner email]
-  UI --> API[Private Next.js reporting endpoint]
+  UI --> API[Private Next.js reporting endpoints]
   API -->|Verify session and owner| Auth
   API -->|Server-only key, GET requests| OpenAI[OpenAI Ads API: personal account only]
+  API -->|Server-only ads_read token| Meta[Meta Marketing API]
+  API -->|Service-account OAuth, read-only Search| Ads[Google Ads API incl. YouTube]
+  Meta -->|Spend, impressions, clicks| API
+  Ads -->|Spend, impressions, clicks| API
   OpenAI -->|Spend, impressions, clicks| API
   API -->|No-store response| UI
   UI -. disabled .-> Legacy[Original convex/ scaffold: never deployed]

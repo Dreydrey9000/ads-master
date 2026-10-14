@@ -1,5 +1,6 @@
 export interface AccountReport {
   accountName: string;
+  connectionNote?: string;
   currency: 'USD';
   since: string;
   until: string;
@@ -31,4 +32,12 @@ export function parseDeliveryRows(rows: unknown[]): AccountReport['days'] {
     };
     return { date: r.readable_time, spend: number('spend'), impressions: number('impressions'), clicks: number('clicks') };
   });
+}
+
+export function finishReport(accountName: string, window: { since: string; until: string }, days: AccountReport['days']): AccountReport {
+  days.sort((a, b) => a.date.localeCompare(b.date));
+  if (new Set(days.map(d => d.date)).size !== days.length || days.some(d => d.date < window.since || d.date > window.until || !Number.isSafeInteger(d.impressions) || !Number.isSafeInteger(d.clicks))) throw new Error('INVALID_REPORT');
+  const totals = days.reduce((sum, d) => ({ spend: sum.spend + d.spend, impressions: sum.impressions + d.impressions, clicks: sum.clicks + d.clicks }), { spend: 0, impressions: 0, clicks: 0 });
+  if (!Number.isFinite(totals.spend) || !Number.isSafeInteger(totals.impressions) || !Number.isSafeInteger(totals.clicks)) throw new Error('INVALID_REPORT');
+  return { accountName, currency: 'USD', ...window, timezone: 'America/New_York', fetchedAt: new Date().toISOString(), days, totals };
 }
