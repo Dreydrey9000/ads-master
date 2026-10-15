@@ -2,7 +2,7 @@
 <title id="title">Ads Master architecture</title><desc id="desc">GitHub deploys the Next.js workspace to Vercel. CSV imports stay in browser storage. Google sign-in uses Convex Auth. A private server endpoint verifies the owner and reads OpenAI, Meta and Google Ads with server-only credentials. Original Convex ad functions remain disabled.</desc>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#a0e5c9"/></marker></defs>
 <rect width="1100" height="610" fill="#0c1419" rx="18"/>
-<g font-family="Arial,sans-serif" fill="#edf3f0"><text x="40" y="50" font-size="26">Ads Master / Private reporting</text><text x="40" y="80" font-size="15" fill="#a4b6b0">Owner-only reporting; Meta and Google API reads verified October 14, 2026</text></g>
+<g font-family="Arial,sans-serif" fill="#edf3f0"><text x="40" y="50" font-size="26">Ads Master / Glass Workspace</text><text x="40" y="80" font-size="15" fill="#a4b6b0">Owner-only reporting; Meta and Google API reads verified October 14, 2026</text></g>
 <g fill="#1c2a2e" stroke="#638679" stroke-width="1.5">
 <rect x="40" y="120" width="250" height="80" rx="14"/><rect x="390" y="120" width="290" height="80" rx="14"/><rect x="800" y="120" width="260" height="80" rx="14"/>
 <rect x="40" y="300" width="250" height="100" rx="14"/><rect x="390" y="300" width="290" height="100" rx="14"/><rect x="800" y="300" width="260" height="100" rx="14"/>

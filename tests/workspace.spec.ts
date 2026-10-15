@@ -4,7 +4,7 @@ const csv = 'platform,spend,revenue,impressions,clicks,conversions\nmeta,100,400
 
 test('desktop navigation, ad search and no browser errors', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto('/'); await expect(page.getByRole('heading', { name: 'Make every ad count.' })).toBeVisible();
+  await page.goto('/'); await expect(page.getByRole('heading', { name: 'Your ads, in focus.' })).toBeVisible();
   await expect(page.getByText('You’re exploring sample data.')).toBeVisible();
   await expect(page.locator('.recharts-area-curve')).toBeVisible();
   await expect(page.locator('.recharts-pie-sector').first()).toBeVisible();
@@ -93,4 +93,21 @@ test('unconfigured AI endpoint cannot make paid requests', async ({ request }) =
   const response = await request.post('/api/insights', { data: { businessId: '1bb' } });
   expect(response.status()).toBe(410);
   expect(await response.json()).toEqual({ error: 'AI insights are not available yet. Import a CSV report to review your measured results.' });
+});
+
+
+test('personal report navigation handles sample mode and business switching', async ({ page }) => {
+  await page.goto('/drey');
+  await page.getByRole('button', { name: 'Account reports', exact: true }).click();
+  await expect(page).toHaveTitle('Account reports | Ads Master');
+  await page.getByRole('button', { name: 'Explore sample', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Switch to your private reports' })).toBeVisible();
+  await page.getByRole('button', { name: 'Use my data', exact: true }).last().click();
+  await expect(page.getByRole('heading', { name: 'Switch to your private reports' })).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Select business' }).selectOption({ index: 0 });
+  await expect(page).toHaveTitle('Overview | Ads Master');
+  await expect(page.getByRole('button', { name: 'Account reports', exact: true })).toHaveCount(0);
+  await page.goto('/updates');
+  await expect(page.getByRole('heading', { name: 'Your new Glass Workspace' })).toBeVisible();
+  await expect(page.locator('img').first()).toBeVisible();
 });

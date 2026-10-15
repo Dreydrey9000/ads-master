@@ -1,3 +1,9 @@
+# Glass Workspace — October 14, 2026
+
+- Applied the approved blue glass theme and silver controls.
+- Added personal Account reports navigation and an updated product notice.
+- Preserved provider access and reporting behavior.
+
 # Private account reporting — October 13, 2026
 
 - Added owner-restricted Google sign-in with Convex Auth; Clerk setup removed at owner request.

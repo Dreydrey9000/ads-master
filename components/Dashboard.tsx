@@ -16,8 +16,8 @@ import { useLive } from "@/lib/live";
 import { downloadReport, type Report } from "@/lib/reports";
 
 const BASE_TABS = ["Overview", "AI Insights", "Winning Ads", "Spend Trends", "Connections"] as const;
-type Tab = (typeof BASE_TABS)[number] | "Sales";
-const ICONS = { Overview: LayoutDashboard, Sales: BarChart3, "AI Insights": Sparkles, "Winning Ads": Compass, "Spend Trends": TrendingUp, Connections: Plug };
+type Tab = (typeof BASE_TABS)[number] | "Sales" | "Account reports";
+const ICONS = { "Account reports": BarChart3, Overview: LayoutDashboard, Sales: BarChart3, "AI Insights": Sparkles, "Winning Ads": Compass, "Spend Trends": TrendingUp, Connections: Plug };
 const STORE = "adsmaster.businesses";
 const REPORT_STORE = "adsmaster.reports.v1";
 
@@ -45,7 +45,8 @@ export default function Dashboard({ personal = false }: { personal?: boolean }) 
   }, [personal]);
   const businesses = [...CONFIG_BUSINESSES, ...custom];
   const biz = businesses.find(b => b.id === bizId) ?? businesses[0];
-  const tabs: Tab[] = biz.sales?.enabled ? ["Overview", "Sales", ...BASE_TABS.slice(1)] : [...BASE_TABS];
+  const tabs: Tab[] = ["Overview", ...(biz.id === PERSONAL_BUSINESS_ID ? ["Account reports" as const] : []), ...(biz.sales?.enabled ? ["Sales" as const] : []), ...BASE_TABS.slice(1)];
+  useEffect(() => { if (tab === "Account reports" && biz.id !== PERSONAL_BUSINESS_ID) setTab("Overview"); }, [biz.id, tab]);
   useEffect(() => { if (tab === "Sales" && !biz.sales?.enabled) setTab("Overview"); }, [biz.sales?.enabled, tab]);
   useEffect(() => { document.title = `${tab} | Ads Master`; }, [tab]);
   const live = useLive(biz.id);
@@ -75,11 +76,12 @@ export default function Dashboard({ personal = false }: { personal?: boolean }) 
     <main id="workspace" className="workspace" tabIndex={-1}>
       <header className="topbar"><span>{biz.name}<ChevronRight size={14} aria-hidden="true" /><span>{tab}</span></span><span className={`source-pill ${sample ? '' : 'real'}`}><span />{sample ? 'Sample workspace' : isLive ? 'Connected data' : report ? 'Imported report' : 'Your workspace'}</span></header>
       <div className="workspace-content">
-        <div className="page-heading"><div><p className="eyebrow">{biz.industry} / AD PERFORMANCE</p><h1>{tab === 'Overview' ? 'Make every ad count.' : tab}</h1><p className="muted">{tab === 'Overview' ? 'A clear view of your spend. A better sense of what works.' : `Your ${biz.name} workspace.`}</p></div><div className="heading-actions"><button className="metal-button" disabled={!metrics.length} onClick={() => downloadReport(metrics, `${biz.id}-${sample ? 'sample' : 'report'}.csv`)}><ArrowDownToLine size={16} aria-hidden="true" />Export</button><button className="metal-button primary" disabled={!loaded || !!storageError} onClick={() => setImporting(true)}><Upload size={16} aria-hidden="true" />Import report</button></div></div>
+        <div className="page-heading"><div><p className="eyebrow">{biz.industry} / AD PERFORMANCE</p><h1>{tab === 'Overview' ? 'Your ads, in focus.' : tab}</h1><p className="muted">{tab === 'Overview' ? 'Your platforms, reports, and next steps in one workspace.' : `Reports and tools for ${biz.name}.`}</p></div><div className="heading-actions"><button className="metal-button" disabled={!metrics.length} onClick={() => downloadReport(metrics, `${biz.id}-${sample ? 'sample' : 'report'}.csv`)}><ArrowDownToLine size={16} aria-hidden="true" />Export</button><button className="metal-button primary" disabled={!loaded || !!storageError} onClick={() => setImporting(true)}><Upload size={16} aria-hidden="true" />Import report</button></div></div>
         {storageError && <p className="error-message" role="alert">{storageError}</p>}
         <div className="data-notice"><div><span className="notice-dot" /><p><strong>{sample ? 'You’re exploring sample data.' : report ? report.period : 'Your business, your results.'}</strong><span>{sample ? 'All numbers, insights, ad examples, and trends here are illustrative.' : report ? `Imported ${new Date(report.importedAt).toLocaleDateString()} · ${report.name} · USD` : isLive ? 'Showing connected platform data.' : biz.id === PERSONAL_BUSINESS_ID ? 'Sign in below for private account reports, or import a CSV.' : 'Import a CSV report to start. No ad account is connected.'}</span></p></div><button className="notice-button" onClick={() => setSample(!sample)}>{sample ? 'Use my data' : 'Explore sample'}<ArrowUpRight size={14} aria-hidden="true" /></button></div>
         {!loaded ? <div className="card" role="status"><span className="thinking-orb" /> Opening your workspace…</div> : <div key={biz.id + tab} className="panel-enter">
-          {(tab === 'Overview' || tab === 'Connections') && biz.id === PERSONAL_BUSINESS_ID && !sample && <AccountReports />}
+          {(tab === 'Overview' || tab === 'Account reports' || tab === 'Connections') && biz.id === PERSONAL_BUSINESS_ID && !sample && <AccountReports />}
+          {tab === 'Account reports' && sample && <section className="card empty-state"><h2>Switch to your private reports</h2><p>Account reports use your connected accounts. Leave sample mode to sign in and read them.</p><button className="metal-button primary" onClick={() => setSample(false)}>Use my data</button></section>}
           {tab === 'Overview' && (biz.id !== PERSONAL_BUSINESS_ID || sample || report) && <Overview metrics={metrics} ads={ads} sample={sample} onImport={() => setImporting(true)} />}
       {tab === "Sales" && sales && (
         <div className="grid gap-4 md:grid-cols-3">
@@ -153,7 +155,7 @@ export default function Dashboard({ personal = false }: { personal?: boolean }) 
           {tab === 'Connections' && live && <Connect live={live} />}
           {tab === 'Connections' && !live && <div className="connections-layout"><section className="card connection-intro"><span className="eyebrow">START WITH A REPORT</span><h2>Your platforms, together.</h2><p className="muted">Use private ChatGPT Ads, Meta, and Google / YouTube reporting in your personal workspace. TikTok and LinkedIn still need account setup.</p><button className="metal-button primary" onClick={() => setImporting(true)}>Import a CSV report <ArrowUpRight size={16} aria-hidden="true" /></button></section><div className="connection-grid">{PLATFORMS.map(p => <div className="card connection-card" key={p.id}><PlatformDot id={p.id} /><span className="small muted">{["openai", "meta", "google", "youtube"].includes(p.id) && biz.id === PERSONAL_BUSINESS_ID ? "Private reporting above" : "Not connected"}</span><span className="small">CSV import available</span></div>)}</div></div>}
         </div>}
-        <footer className="workspace-footer"><span>ADS MASTER <span className="muted">/</span> DREY</span><span>{sample ? 'Illustrative data · no campaigns changed' : 'Local reports · no campaigns changed'}</span></footer>
+        <footer className="workspace-footer"><span>ADS MASTER <span className="muted">/</span> DREY · <a href="/updates">What’s new</a></span><span>{sample ? 'Illustrative data · no campaigns changed' : 'Local reports · no campaigns changed'}</span></footer>
       </div>
     </main>
     {adding && <AddBusiness onAdd={addBiz} onClose={() => setAdding(false)} />}
