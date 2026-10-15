@@ -37,7 +37,7 @@ function ConnectedAccountReports() {
   const lastFetch = useRef(0);
   useEffect(() => {
     if (!user) return;
-    try { setShowUpdate(localStorage.getItem(`adsmaster.update.multi-platform-reports.${user.id}`) !== 'seen'); } catch { setShowUpdate(true); }
+    try { setShowUpdate(localStorage.getItem(`adsmaster.update.glass-workspace.${user.id}`) !== 'seen'); } catch { setShowUpdate(true); }
   }, [user]);
   useEffect(() => {
     setReport(null); setError('');
@@ -65,7 +65,7 @@ function ConnectedAccountReports() {
   }, [isSignedIn, user?.id, refresh, provider]);
 
   function dismissUpdate() {
-    try { localStorage.setItem(`adsmaster.update.multi-platform-reports.${user?.id}`, 'seen'); } catch { /* Remains available on the next visit. */ }
+    try { localStorage.setItem(`adsmaster.update.glass-workspace.${user?.id}`, 'seen'); } catch { /* Remains available on the next visit. */ }
     setShowUpdate(false);
   }
 
@@ -74,7 +74,7 @@ function ConnectedAccountReports() {
       <div><p className="eyebrow">PERSONAL ACCOUNT / {providerName.toUpperCase()}</p><h2>Your account, automatically.</h2><p className="muted">Private reporting for Drey Thomas. Refreshes every five minutes while this view is open.</p></div>
       <div className="heading-actions">{isSignedIn && <AccountSignOut />}{!isLoaded ? <span role="status">Checking sign-in…</span> : isSignedIn ? <button className="metal-button" disabled={loading} onClick={() => setRefresh(n => n + 1)}>Refresh reports</button> : <AccountSignIn />}</div>
     </div>
-    {showUpdate && isSignedIn && <aside className="card account-update"><h2>New: Meta and Google reports</h2><p>Choose ChatGPT Ads, Meta, or Google / YouTube below to read spend, impressions, and clicks directly from your accounts. Reports load when you open a platform and refresh every five minutes while visible. TikTok and LinkedIn still need account setup.</p><p className="small muted">Only your personal account is used here. Reporting does not change campaigns or budgets.</p><div className="heading-actions"><a className="metal-button" href="/updates">See what changed</a><button className="metal-button" onClick={dismissUpdate}>Got it</button></div></aside>}
+    {showUpdate && isSignedIn && <aside className="card account-update"><h2>New: your Glass Workspace</h2><p>Your workspace has a new glass layout. Use Account reports in the navigation to reach your private ChatGPT Ads, Meta, and Google / YouTube reports. Connections and CSV import remain available.</p><p className="small muted">Only your personal account is used here. Reporting does not change campaigns or budgets.</p><div className="heading-actions"><a className="metal-button" href="/updates">See what changed</a><button className="metal-button" onClick={dismissUpdate}>Got it</button></div></aside>}
     {isSignedIn && <div className="heading-actions reporting-platforms" role="group" aria-label="Reporting platform">{(['openai', 'meta', 'google'] as const).map(id => <button key={id} className={`metal-button${provider === id ? ' primary' : ''}`} aria-pressed={provider === id} onClick={() => { if (provider !== id) { setReport(null); setError(''); setProvider(id); } }}>{ {openai: 'ChatGPT Ads', meta: 'Meta Ads', google: 'Google / YouTube Ads'}[id] }</button>)}</div>}
     {loading && <div className="card" role="status"><span className="thinking-orb" /> Reading your account report…</div>}
     {error && <div className="card error-message" role="alert"><h2>Reports need attention</h2><p>{error}</p><p className="small">You can still import a CSV using the button above.</p></div>}

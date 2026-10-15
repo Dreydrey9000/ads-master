@@ -92,3 +92,7 @@ Deployment uses Vercel project `ads-master` in scope `dreys-projects-277f634a`. 
 This is a personal reporting tool, not a customer account service. A future plugin could give the approved owner a read-only delivery summary and link to `/drey`. That workflow would need authenticated MCP tools with the same owner and account checks; a skill alone cannot access private live reports. CSV validation is a separate possible skill and must not upload browser-local reports without consent. Start with one reporting tool, measure successful report reads and app opens, and budget support for expired sessions or account keys. Plugin packaging is deferred until hosted authentication and reporting are verified. No plugin has been submitted or published.
 
 The previous `ads.dreythomas.com` address remains available for exporting reports saved on that origin. Browser storage is separate for each hostname; import the exported CSV on the new address.
+
+### Glass Workspace
+
+The approved visual direction is recorded in [THEME-DECISION.md](THEME-DECISION.md). Open the personal workspace and choose **Account reports** in the navigation for private reporting. The glass design adapts to mobile and respects reduced motion and reduced transparency.

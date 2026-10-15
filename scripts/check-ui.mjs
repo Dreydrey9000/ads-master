@@ -13,5 +13,5 @@ assert('text-[13px]'.match(rules.arbitraryTextSizes));
 assert('setError(String(e))'.match(rules.rawExceptionUI));
 const css=fs.readFileSync('app/globals.css','utf8');
 for (const token of [':focus-visible','prefers-reduced-motion','::backdrop']) assert(css.includes(token), `Missing ${token}`);
-assert(fs.existsSync('public/updates/account-reports.png'), 'Missing product update preview');
+for (const image of ['account-reports', 'multi-platform-reports', 'glass-workspace']) assert(fs.existsSync(`public/updates/${image}.png`), `Missing product update preview: ${image}`);
 console.log('UI gate passed: no new baseline violations; focus, motion, and dialog rules present.');
