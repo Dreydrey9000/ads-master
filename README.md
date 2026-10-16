@@ -11,10 +11,10 @@ npm run dev -- --port 3210
 
 Open http://localhost:3210. Keep using the same hostname to retain browser-local CSV imports. Node.js 22+ is recommended.
 
-1. Select a business or choose **Add business**.
-2. Choose **Import report** and download the CSV template.
-3. Fill one or more rows using the columns below, then choose the reporting period and import.
-4. Review measured spend, attributed revenue, return on ad spend (ROAS), and cost per conversion. Use **Export** to keep a backup.
+1. Select **Drey's Personal Ads** or **1 Button Business** and sign in with the approved Google owner account.
+2. Review automatic totals, daily graphs, freshness, and the suggested next step in **Overview**.
+3. Optional: choose **Import report** for a separate browser-local CSV, or **Explore sample** for illustrative data.
+4. CSV imports use the columns below. Use matching periods and attribution definitions; use **Export** to keep a backup.
 
 ```csv
 platform,spend,revenue,impressions,clicks,conversions
@@ -30,7 +30,7 @@ Imported reports and custom businesses are saved in this browser's local storage
 
 The personal workspace offers Google sign-in through Convex Auth. Only the verified Google email configured as `AUTH_OWNER_EMAIL` can sign in. The server independently checks the authenticated owner before reading the account API. Registration alone cannot grant access.
 
-The OpenAI, Meta and Google Ads connectors read delivery for the last 30 completed days in America/New_York, in USD. Each validates the account ID, currency and timezone, follows pagination, and rejects incomplete/invalid results. The selected platform fetches on opening the reporting view and every five minutes while visible; returning after five minutes refreshes it. There is no background scheduler when the view is closed. Results stay in memory and clear on sign-out. No public cache or localStorage contains connected reports.
+The personal **Account reports** detail view reads 30 completed New York days and refreshes every five minutes while visible. **Overview** uses private saved reports from the hourly DreyOS job, including Meta and Google even while the app is closed. Its ChatGPT window is seven completed New York days; Stripe is 30 UTC days and 1BB website traffic is seven UTC days. Each card labels its dates. No public cache or localStorage contains connected reports; the owner-authorized Convex query retrieves private aggregates. See [automatic reporting operations](docs/AUTOMATIC-REPORTING.md).
 
 This connection covers **spend, impressions and clicks** only. Revenue and conversions are not fetched, and ad revenue is not cash available for personal purchases. TikTok and LinkedIn await provider setup. Meta uses GET; Google uses its read-only Search RPC via POST and service-account OAuth; there are no campaign-write or budget-change endpoints. The OpenAI key has broader management permissions; Meta has ads_read and Google has account-level Read only access. All credentials remain server-only. Google access tokens renew on demand. Meta user tokens expire and require reconnection; no perpetual-login guarantee is made.
 
@@ -42,7 +42,7 @@ Additional Vercel variables: `META_ADS_ACCESS_TOKEN` (Sensitive), `META_ADS_ACCO
 
 Convex variables: `SITE_URL`, `AUTH_OWNER_EMAIL`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `JWT_PRIVATE_KEY`, `JWKS`. Use separate auth signing keys for development and production. Google OAuth callbacks are `https://<deployment>.convex.site/api/auth/callback/google`; configure each approved deployment explicitly in Google Cloud. Keep Google identity scopes to openid, email and profile.
 
-Run `npx convex dev --once` for the development backend and `npx convex deploy` for production. `convex.json` deploys **only `backend/`**, containing authentication and the owner query. It does not deploy the original `convex/` scaffold. App builds work without provider configuration and fail closed for account reporting. Backend code changes must be deployed separately from the Vercel frontend.
+Run `npx convex dev --once` for the development backend and `npx convex deploy` for production. `convex.json` deploys **only `backend/`**, containing authentication, private reporting snapshots and owner queries. It does not deploy the original `convex/` scaffold. App builds work without provider configuration and fail closed for account reporting. Backend code changes must be deployed separately from the Vercel frontend. Background ingress additionally requires `REPORT_SYNC_SECRET` in Vercel and Convex, matching DreyOS's private key file.
 
 Before calling a connection live, verify a real Google sign-in, authenticated reporting, unauthenticated denial, wrong-user denial, and sign-out in the hosted app. The in-app update archive is `/updates`.
 
@@ -81,7 +81,7 @@ Source structure: `components/Dashboard.tsx` owns workspace selection; `Overview
 ## Hosted workspace
 
 - App: https://adsmaster.dreythomas.com
-- Drey personal workspace: https://adsmaster.dreythomas.com/drey (starts empty)
+- Drey personal workspace: https://adsmaster.dreythomas.com/drey (private automatic reporting)
 
 Both links use the same app and browser-local storage for CSV imports. The personal link selects Drey's Personal Ads and offers a private connected reporting view. Imported CSVs are not protected by account login: anyone using the same browser profile can view them. Connected data requires the approved login and is fetched through Vercel. Reports imported on localhost must be exported and imported on the hosted domain.
 
@@ -97,4 +97,4 @@ The previous `ads.dreythomas.com` address remains available for exporting report
 
 The approved visual direction is recorded in [THEME-DECISION.md](THEME-DECISION.md). Open the personal workspace and choose **Account reports** in the navigation for private reporting. The glass design adapts to mobile and respects reduced motion and reduced transparency.
 
-The **DreyOS Growth** sidebar shortcut opens the separately authenticated Growth workbook. Select 1BB there for its connected ChatGPT Ads, Stripe and PostHog reports. This is navigation, not a report-data bridge: DreyOS totals do not populate Ads Master's sample/CSV charts. See the [reporting architecture](docs/diagrams/reporting.mmd). Hourly refresh is installed and verified in DreyOS for 1BB's three providers and personal Stripe plus ChatGPT Ads; Ads Master's Meta and Google reports still refresh only while open.
+The **DreyOS Growth** shortcut opens the separately authenticated Growth workbook. Its aggregate reports also populate Ads Master's private Overview charts through the hourly bridge, alongside personal Meta and Google. Sample/CSV charts remain separate. See the [reporting architecture](docs/diagrams/reporting.mmd) and [deployment, rollback and reporting limits](docs/AUTOMATIC-REPORTING.md).

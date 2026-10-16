@@ -12,6 +12,8 @@ import Connect from "./Connect";
 import ImportReport from "./ImportReport";
 import Overview from "./Overview";
 import AccountReports from './AccountReports';
+import LiveOverview from './LiveOverview';
+import { isBusiness } from '@/lib/dashboard-report';
 import { useLive } from "@/lib/live";
 import { downloadReport, type Report } from "@/lib/reports";
 
@@ -27,7 +29,7 @@ export default function Dashboard({ personal = false }: { personal?: boolean }) 
   const [adding, setAdding] = useState(false), [importing, setImporting] = useState(false);
   const [storageError, setStorageError] = useState('');
   const [loaded, setLoaded] = useState(false);
-  const [sample, setSample] = useState(!personal);
+  const [sample, setSample] = useState(false);
   const [bizId, setBizId] = useState(personal ? PERSONAL_BUSINESS_ID : CONFIG_BUSINESSES[0].id);
   const [tab, setTab] = useState<Tab>("Overview");
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function Dashboard({ personal = false }: { personal?: boolean }) 
   const insights = sample ? getInsights(biz) : isLive ? live?.insights ?? [] : [];
   const sales = !biz.sales?.enabled ? null : sample ? getSales(biz) : live?.sales?.hasData ? live.sales : null;
   const totals = { spend: metrics.reduce((s, m) => s + m.spend, 0) };
-  const selectBusiness = (id: string) => { setBizId(id); setSample(id !== PERSONAL_BUSINESS_ID && !custom.some(b => b.id === id) && !reports[id]); try { localStorage.setItem('adsmaster.selected', id); } catch { setStorageError('Business selection could not be remembered in this browser.'); } };
+  const selectBusiness = (id: string) => { setBizId(id); setSample(!isBusiness(id) && !custom.some(b => b.id === id) && !reports[id]); try { localStorage.setItem('adsmaster.selected', id); } catch { setStorageError('Business selection could not be remembered in this browser.'); } };
   const addBiz = (b: Business) => { const next = [...custom, b]; localStorage.setItem(STORE, JSON.stringify(next)); setCustom(next); selectBusiness(b.id); setSample(false); setAdding(false); };
   const saveReport = (r: Report) => { const next = { ...reports, [biz.id]: r }; localStorage.setItem(REPORT_STORE, JSON.stringify(next)); setReports(next); setSample(false); setImporting(false); setTab('Overview'); };
   const researchTab = tab === 'Winning Ads' || tab === 'Spend Trends';
@@ -72,19 +74,19 @@ export default function Dashboard({ personal = false }: { personal?: boolean }) 
       <div className="nav-label label">Manage & discover</div>
       <nav aria-label="Main navigation">{tabs.map(t => { const Icon = ICONS[t]; return <button key={t} aria-current={tab === t ? 'page' : undefined} onClick={() => setTab(t)}><Icon size={18} aria-hidden="true" />{t}{tab === t && <span className="nav-dot" />}</button>; })}</nav>
       <a className="metal-button" href="https://dreyos.dreytools.com/growth/#review">DreyOS Growth <ArrowUpRight size={16} aria-hidden="true" /></a>
-      <div className="sidebar-bottom"><div className="local-dot" /><span>Local workspace<small>Saved in this browser</small></span></div>
+      <div className="sidebar-bottom"><div className="local-dot" /><span>Your workspace<small>Private reports · local CSVs</small></span></div>
     </aside>
     <main id="workspace" className="workspace" tabIndex={-1}>
       <header className="topbar"><span>{biz.name}<ChevronRight size={14} aria-hidden="true" /><span>{tab}</span></span><span className={`source-pill ${sample ? '' : 'real'}`}><span />{sample ? 'Sample workspace' : isLive ? 'Connected data' : report ? 'Imported report' : 'Your workspace'}</span></header>
       <div className="workspace-content">
         <div className="page-heading"><div><p className="eyebrow">{biz.industry} / AD PERFORMANCE</p><h1>{tab === 'Overview' ? 'Your ads, in focus.' : tab}</h1><p className="muted">{tab === 'Overview' ? 'Your platforms, reports, and next steps in one workspace.' : `Reports and tools for ${biz.name}.`}</p></div><div className="heading-actions"><button className="metal-button" disabled={!metrics.length} onClick={() => downloadReport(metrics, `${biz.id}-${sample ? 'sample' : 'report'}.csv`)}><ArrowDownToLine size={16} aria-hidden="true" />Export</button><button className="metal-button primary" disabled={!loaded || !!storageError} onClick={() => setImporting(true)}><Upload size={16} aria-hidden="true" />Import report</button></div></div>
         {storageError && <p className="error-message" role="alert">{storageError}</p>}
-        <div className="data-notice"><div><span className="notice-dot" /><p><strong>{sample ? 'You’re exploring sample data.' : report ? report.period : 'Your business, your results.'}</strong><span>{sample ? 'All numbers, insights, ad examples, and trends here are illustrative.' : report ? `Imported ${new Date(report.importedAt).toLocaleDateString()} · ${report.name} · USD` : isLive ? 'Showing connected platform data.' : biz.id === PERSONAL_BUSINESS_ID ? 'Sign in below for private account reports, or import a CSV.' : 'Import a CSV report to start. No ad account is connected.'}</span></p></div><button className="notice-button" onClick={() => setSample(!sample)}>{sample ? 'Use my data' : 'Explore sample'}<ArrowUpRight size={14} aria-hidden="true" /></button></div>
+        <div className="data-notice"><div><span className="notice-dot" /><p><strong>{sample ? 'You’re exploring sample data.' : report ? report.period : 'Your business, your results.'}</strong><span>{sample ? 'All numbers, insights, ad examples, and trends here are illustrative.' : report ? `Imported ${new Date(report.importedAt).toLocaleDateString()} · ${report.name} · USD` : isLive ? 'Showing connected platform data.' : isBusiness(biz.id) ? 'Private automatic reporting appears below. CSV imports remain separate.' : 'Import a CSV report to start. No ad account is connected.'}</span></p></div><button className="notice-button" onClick={() => setSample(!sample)}>{sample ? 'Use my data' : 'Explore sample'}<ArrowUpRight size={14} aria-hidden="true" /></button></div>
         {!loaded ? <div className="card" role="status"><span className="thinking-orb" /> Opening your workspace…</div> : <div key={biz.id + tab} className="panel-enter">
-          {(tab === 'Overview' || tab === 'Connections') && biz.id === '1bb' && <section className="card"><p className="eyebrow">1BB / CONNECTED REPORTS</p><h2>Your 1BB reports are in DreyOS.</h2><p className="muted">Open Growth and select 1BB to view its connected ChatGPT Ads, Stripe payments, and website analytics. Those reports are separate from the sample or CSV figures in this workspace.</p><a className="metal-button" href="https://dreyos.dreytools.com/growth/#review">Open 1BB reporting in DreyOS <ArrowUpRight size={16} aria-hidden="true" /></a></section>}
-          {(tab === 'Overview' || tab === 'Account reports' || tab === 'Connections') && biz.id === PERSONAL_BUSINESS_ID && !sample && <AccountReports />}
+          {(tab === 'Overview' || tab === 'Connections') && isBusiness(biz.id) && !sample && <LiveOverview businessId={biz.id} />}
+          {tab === 'Account reports' && biz.id === PERSONAL_BUSINESS_ID && !sample && <AccountReports />}
           {tab === 'Account reports' && sample && <section className="card empty-state"><h2>Switch to your private reports</h2><p>Account reports use your connected accounts. Leave sample mode to sign in and read them.</p><button className="metal-button primary" onClick={() => setSample(false)}>Use my data</button></section>}
-          {tab === 'Overview' && (biz.id !== PERSONAL_BUSINESS_ID || sample || report) && <Overview metrics={metrics} ads={ads} sample={sample} onImport={() => setImporting(true)} />}
+          {tab === 'Overview' && (!isBusiness(biz.id) || sample || report) && <section aria-label={sample ? 'Illustrative reports' : 'Imported or local reports'}>{report && !sample && <h2 className="card">Separate CSV report · {report.period}</h2>}<Overview metrics={metrics} ads={ads} sample={sample} onImport={() => setImporting(true)} /></section>}
       {tab === "Sales" && sales && (
         <div className="grid gap-4 md:grid-cols-3">
           <div className="card flex items-center gap-4 animate-rise">

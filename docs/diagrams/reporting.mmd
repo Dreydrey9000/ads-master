@@ -1,13 +1,18 @@
 flowchart TD
-  Owner[Approved owner] --> Auth[Google sign-in through Convex Auth]
-  Auth --> Personal[Ads Master personal reports]
-  Personal --> ChatGPT[Personal ChatGPT Ads API]
-  Personal --> Meta[Personal Meta API]
-  Personal --> Google[Personal Google Ads API]
-  Workspace[Ads Master workspace] -->|Navigation shortcut only| Growth[DreyOS Growth with its own sign-in]
-  Growth --> Business{Selected business}
-  Business --> PersonalGrowth[Drey Thomas reporting]
-  Business --> OneBB[1BB reporting: ChatGPT Ads, Stripe, PostHog]
-  Workspace --> Samples[Explicit sample or locally imported CSV figures]
-  Timer[Hourly DreyOS refresh: installed and verified] --> OneBB
-  Timer --> PersonalGrowth
+  Timer[DreyOS hourly user timer] --> Local[Authenticated loopback refresh]
+  Local --> Personal[Personal ChatGPT Ads and Stripe]
+  Local --> OneBB[1BB ChatGPT Ads, Stripe and PostHog]
+  Personal --> Push[Whitelist aggregate daily reports]
+  OneBB --> Push
+  Push -->|Secret-authenticated POST| Sync[Ads Master reporting sync route]
+  Sync --> Meta[Personal Meta read API]
+  Sync --> Google[Personal Google read API]
+  Sync -->|Secret-authenticated bounded payload| Ingest[Convex HTTP ingest]
+  Ingest --> Store[Private business and provider snapshots]
+  Store -->|Keep last good data on failure| Store
+  Owner[Approved Google owner] --> Auth[Convex Auth]
+  Auth --> Query[Owner-authorized business query]
+  Store --> Query
+  Query --> UI[Overview totals, graphs, freshness and next step]
+  UI -->|Separate authenticated review| Growth[DreyOS Growth]
+  CSV[Explicit browser-local CSV and demo mode] --> Separate[Separate imported or sample charts]

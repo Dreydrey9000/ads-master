@@ -33,12 +33,7 @@ function ConnectedAccountReports() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [refresh, setRefresh] = useState(0);
-  const [showUpdate, setShowUpdate] = useState(false);
   const lastFetch = useRef(0);
-  useEffect(() => {
-    if (!user) return;
-    try { setShowUpdate(localStorage.getItem(`adsmaster.update.dreyos-reporting.${user.id}`) !== 'seen'); } catch { setShowUpdate(true); }
-  }, [user]);
   useEffect(() => {
     setReport(null); setError('');
     if (!isSignedIn) return;
@@ -64,17 +59,11 @@ function ConnectedAccountReports() {
     return () => { active = false; controller.abort(); window.clearInterval(interval); document.removeEventListener('visibilitychange', visible); };
   }, [isSignedIn, user?.id, refresh, provider]);
 
-  function dismissUpdate() {
-    try { localStorage.setItem(`adsmaster.update.dreyos-reporting.${user?.id}`, 'seen'); } catch { /* Remains available on the next visit. */ }
-    setShowUpdate(false);
-  }
-
   return <section className="overview-stack" aria-label="Automatic account reports">
     <div className="card account-report-header">
       <div><p className="eyebrow">PERSONAL ACCOUNT / {providerName.toUpperCase()}</p><h2>Your account, automatically.</h2><p className="muted">Private reporting for Drey Thomas. Refreshes every five minutes while this view is open.</p></div>
       <div className="heading-actions">{isSignedIn && <AccountSignOut />}{!isLoaded ? <span role="status">Checking sign-in…</span> : isSignedIn ? <button className="metal-button" disabled={loading} onClick={() => setRefresh(n => n + 1)}>Refresh reports</button> : <AccountSignIn />}</div>
     </div>
-    {showUpdate && isSignedIn && <aside className="card account-update"><h2>New: DreyOS reporting shortcut</h2><p>Use DreyOS Growth in the sidebar to open your Growth reports. Select 1BB there for its connected ad, payment, and website reports. Personal ad reports remain here in Account reports.</p><p className="small muted">The shortcut opens DreyOS; it does not copy its totals into this dashboard or change campaigns and budgets.</p><div className="heading-actions"><a className="metal-button" href="/updates">See what changed</a><button className="metal-button" onClick={dismissUpdate}>Got it</button></div></aside>}
     {isSignedIn && <div className="heading-actions reporting-platforms" role="group" aria-label="Reporting platform">{(['openai', 'meta', 'google'] as const).map(id => <button key={id} className={`metal-button${provider === id ? ' primary' : ''}`} aria-pressed={provider === id} onClick={() => { if (provider !== id) { setReport(null); setError(''); setProvider(id); } }}>{ {openai: 'ChatGPT Ads', meta: 'Meta Ads', google: 'Google / YouTube Ads'}[id] }</button>)}</div>}
     {loading && <div className="card" role="status"><span className="thinking-orb" /> Reading your account report…</div>}
     {error && <div className="card error-message" role="alert"><h2>Reports need attention</h2><p>{error}</p><p className="small">You can still import a CSV using the button above.</p></div>}
