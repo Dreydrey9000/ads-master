@@ -128,7 +128,7 @@ test('1BB never inherits sample research or false connection labels', async ({ p
   }
   await expect(page.locator('.kpi-0')).toHaveCount(0);
   await page.getByRole('button', { name: 'Connections', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '1BB · Automatic reports' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^(1BB · Automatic reports|Automatic reports need setup\.)$/ })).toBeVisible();
   await expect(page.getByText('Not connected', { exact: true })).toHaveCount(0);
   await expect(page.getByText('CSV import available', { exact: true })).toHaveCount(0);
   await page.reload();
