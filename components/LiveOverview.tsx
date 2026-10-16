@@ -27,16 +27,16 @@ function ConnectedOverview({ businessId }: { businessId: BusinessId }) {
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 60000); return () => window.clearInterval(timer); }, []);
   useEffect(() => {
     if (!viewer?.isOwner) { setShowUpdate(false); return; }
-    try { setShowUpdate(localStorage.getItem(`adsmaster.update.automatic-overview.${viewer.id}`) !== 'seen'); } catch { setShowUpdate(true); }
+    try { setShowUpdate(localStorage.getItem(`adsmaster.update.real-1bb-reporting.${viewer.id}`) !== 'seen'); } catch { setShowUpdate(true); }
   }, [viewer?.id, viewer?.isOwner]);
   const waiting = isLoading || (isAuthenticated && viewer === undefined) || (viewer?.isOwner && saved === undefined);
   const sources: DashboardSource[] = SOURCES[businessId].map(provider => saved?.find(s => s.provider === provider) ?? { businessId, provider, attemptedAt: '', error: 'NOT_CONFIGURED' });
-  function dismiss() { try { localStorage.setItem(`adsmaster.update.automatic-overview.${viewer?.id}`, 'seen'); } catch { /* Keep the update available on the next visit. */ } setShowUpdate(false); }
+  function dismiss() { try { localStorage.setItem(`adsmaster.update.real-1bb-reporting.${viewer?.id}`, 'seen'); } catch { /* Keep the update available on the next visit. */ } setShowUpdate(false); }
   return <section className="overview-stack" aria-label="Automatic business reporting">
     <div className="card account-report-header automatic-summary"><div><h2>{businessId === '1bb' ? '1BB' : 'Drey Thomas'} · Automatic reports</h2><p className="muted"><Clock3 size={15} aria-hidden="true" /> Updates hourly, even when closed. Last successful updates appear on each card.</p></div><div className="heading-actions">{isAuthenticated ? <AccountSignOut /> : !isLoading && <AccountSignIn />}</div></div>
     {waiting ? <div className="card" role="status"><span className="thinking-orb" /> Loading private reports…</div> : !isAuthenticated ? <div className="card"><h2>Your reports stay private.</h2><p className="muted">Sign in with your approved Google account to see saved results, graphs, and next steps.</p></div> : !viewer?.isOwner || saved === null ? <div className="card error-message" role="alert"><h2>Owner access required</h2><p>This login cannot view these business reports. Switch to your approved account.</p></div> : <>
       <ReportOverview sources={sources} now={now} />
-      {showUpdate && <aside className="card account-update"><h2>New: automatic totals, graphs, and next steps</h2><p>Overview now brings DreyOS reports into Ads Master. Switch Business for personal or 1BB results. Meta and Google join the hourly background update, so reports keep refreshing after you close the app.</p><div className="heading-actions"><a className="metal-button" href="/updates">See what changed</a><button className="metal-button" onClick={dismiss}>Got it</button></div></aside>}
+      {showUpdate && <aside className="card account-update"><h2>New: real 1BB reporting, clearly separated</h2><p>Choose 1BB in Business for connected ChatGPT Ads, Stripe payments, and website traffic. Its Overview and Connections now show supported reports without sample research or contradictory connection labels. Any CSV you imported stays separately labeled. Reports still refresh hourly, even when closed.</p><div className="heading-actions"><a className="metal-button" href="/updates">See what changed</a><button className="metal-button" onClick={dismiss}>Got it</button></div></aside>}
     </>}
   </section>;
 }

@@ -5,7 +5,9 @@ export const metadata = { title: 'Product updates' };
 export default function Page() {
   return <main className="auth-page"><article className="card account-update">
     <p className="eyebrow">ADS MASTER / UPDATES</p>
-    <h1>Your totals, graphs, and next step</h1>
+    <h1>Real reporting for 1BB</h1>
+    <p>Choose 1BB in Business to see connected ChatGPT Ads, Stripe payments, and website traffic. Overview and Connections show these supported sources, without sample research or conflicting connection labels. Existing CSV imports remain separate and labeled. Missing or delayed reports stay visible as missing or delayed.</p>
+    <h2>Your totals, graphs, and next step</h2>
     <p>Overview now shows DreyOS totals directly in Ads Master, with daily graphs and a suggested next step. Use Business to switch between Drey Thomas and 1BB. Reports refresh hourly in the background, even when the app is closed.</p>
     <p>Personal reporting includes ChatGPT Ads, Meta, Google / YouTube, and Stripe. 1BB includes ChatGPT Ads, Stripe, and website traffic. Each card shows its own reporting dates and last successful update; a failed refresh keeps the previous report visible with a warning.</p>
     <p>Payments are before fees and costs. They are not attributed ad revenue or available profit. Connection renewal may still be required if a platform expires or revokes access. Campaigns and budgets require your separate approval.</p>
