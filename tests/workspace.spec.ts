@@ -5,6 +5,7 @@ const csv = 'platform,spend,revenue,impressions,clicks,conversions\nmeta,100,400
 test('desktop navigation, ad search and no browser errors', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await expect(page.getByRole('heading', { name: 'Your ads, in focus.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Explore sample', exact: true }).click();
   await expect(page.getByText('You’re exploring sample data.')).toBeVisible();
   await expect(page.locator('.recharts-area-curve')).toBeVisible();
   await expect(page.locator('.recharts-pie-sector').first()).toBeVisible();
@@ -80,7 +81,7 @@ test('personal link opens empty, remembers imports and isolates businesses', asy
   await page.reload();
   await expect(page.locator('.kpi-0')).toContainText('$150');
   await page.getByLabel('Select business').selectOption('1bb');
-  await expect(page.locator('.source-pill')).toHaveText('Sample workspace');
+  await expect(page.locator('.source-pill')).toHaveText('Your workspace');
   await page.goto('/drey');
   await expect(page.locator('.source-pill')).toHaveText('Imported report');
   await page.setViewportSize({ width: 390, height: 844 });
