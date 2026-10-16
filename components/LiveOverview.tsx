@@ -4,12 +4,13 @@ import { useConvexAuth, useQuery } from 'convex/react';
 import { makeFunctionReference } from 'convex/server';
 import { ArrowUpRight, Clock3, CircleAlert } from 'lucide-react';
 import AccountSignIn, { AccountSignOut } from './AccountSignIn';
-import { money } from './ui';
 import { SOURCES, SOURCE_NAMES, nextStep, type BusinessId, type DashboardSource, type SavedReport } from '@/lib/dashboard-report';
 import './live-overview.css';
 
 const dashboardQuery = makeFunctionReference<'query', { businessId: BusinessId }, DashboardSource[] | null>('reporting:dashboard');
 const viewerQuery = makeFunctionReference<'query', Record<string, never>, { id: string; isOwner: boolean } | null>('viewer:current');
+const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (value: number) => dollars.format(value);
 const format = (value: number, data: SavedReport) => data.metric === 'pageviews' ? value.toLocaleString() : money(value);
 
 export default function LiveOverview({ businessId }: { businessId: BusinessId }) {

@@ -8,7 +8,7 @@ export type SavedReport = {
 export type ReportUpdate = { businessId: BusinessId; provider: SourceId; error: string | null; data?: SavedReport };
 export type DashboardSource = ReportUpdate & { attemptedAt: string };
 export const SOURCE_NAMES: Record<SourceId, string> = { openai: 'ChatGPT Ads', meta: 'Meta Ads', google: 'Google / YouTube', stripe: 'Stripe payments', posthog: 'Website traffic' };
-export const SOURCES: Record<BusinessId, SourceId[]> = { 'drey-personal': ['openai', 'meta', 'google', 'stripe'], '1bb': ['openai', 'stripe', 'posthog'] };
+export const SOURCES: Record<BusinessId, SourceId[]> = { 'drey-personal': ['openai', 'stripe', 'meta', 'google'], '1bb': ['openai', 'stripe', 'posthog'] };
 export function isBusiness(value: unknown): value is BusinessId { return value === '1bb' || value === 'drey-personal'; }
 export function isSource(value: unknown): value is SourceId { return typeof value === 'string' && Object.hasOwn(SOURCE_NAMES, value); }
 export const safeError = (value: unknown) => typeof value === 'string' && ['NOT_CONFIGURED','RECONNECT','RATE_LIMITED','ACCOUNT_MISMATCH','INVALID_REPORT','INCOMPLETE_REPORT','PROVIDER_ERROR'].includes(value) ? value : 'PROVIDER_ERROR';
