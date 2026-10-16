@@ -61,7 +61,7 @@ export function nextStep(sources: DashboardSource[], now = Date.now()) {
   if (problem) return { title: `Check ${SOURCE_NAMES[problem.provider]}`, detail: problem.error === 'RECONNECT' ? 'This platform needs its reporting connection renewed. The last successful report remains below.' : 'This report is missing, delayed, or could not refresh. Check Connections before making a spending decision.' };
   const adReports = sources.filter(s => s.data?.metric === 'spend');
   const clicks = adReports.reduce((sum,s) => sum + (s.data?.rows.reduce((n,r)=>n+(r.clicks ?? 0),0) ?? 0),0);
-  if (clicks) return { title: 'Check what happened after the click', detail: 'Clicks are being reported. Review completed applications or purchases and their matching conversion events before changing spend. Payment totals alone do not show which ads caused a sale.' };
+  if (clicks) return { title: 'Check what happened after the click', detail: 'Clicks are coming in. Verify completed applications or purchases and their matching conversion events before changing spend.' };
   return { title: 'Prepare one measurable ad test', detail: 'No clicks are reported in the connected ad windows. Review the offer, destination, conversion test, spend cap, and stop rule in Growth before approving a launch.' };
 }
 

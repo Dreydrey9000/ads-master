@@ -3,6 +3,7 @@
 - Added private, business-separated DreyOS aggregate snapshots and hourly Meta/Google refresh, including when the browser is closed.
 - Put daily graphs, source totals, last-success timestamps and evidence-based next steps in Overview. Preserve last good reports on individual provider failures.
 - Default personal and 1BB workspaces to real reporting. Keep CSV imports and sample mode explicit and separate.
+- Preserve exact cents, place personal payments in the first row, and compact the header to bring graphs and next steps forward.
 - Added bounded, secret-authenticated ingestion and owner-only snapshot queries. No ad launches, budget changes or customer records in the reporting bridge.
 
 # Glass Workspace — October 14, 2026
