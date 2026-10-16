@@ -14,7 +14,7 @@ function fixtureMarkup() {
   const now=Date.parse('2026-10-16T12:00:00Z');
   const sources:reports.DashboardSource[]=[
     {businessId:'1bb',provider:'openai',attemptedAt:new Date(now).toISOString(),error:null,data:{since:'2026-10-09',until:'2026-10-15',timezone:'America/New_York',checkedAt:new Date(now).toISOString(),metric:'spend',currency:'USD',rows:[{date:'2026-10-09',value:20,clicks:30,impressions:1000},{date:'2026-10-12',value:35,clicks:70,impressions:2000}]}},
-    {businessId:'1bb',provider:'stripe',attemptedAt:new Date(now).toISOString(),error:'PROVIDER_ERROR',data:{since:'2026-09-16',until:'2026-10-15',timezone:'UTC',checkedAt:new Date(now-4*3600000).toISOString(),metric:'captured',currency:'USD',rows:[{date:'2026-10-12',value:120,refunded:10}]}},
+    {businessId:'1bb',provider:'stripe',attemptedAt:new Date(now).toISOString(),error:'PROVIDER_ERROR',data:{since:'2026-09-16',until:'2026-10-15',timezone:'UTC',checkedAt:new Date(now-4*3600000).toISOString(),metric:'captured',currency:'USD',rows:[{date:'2026-10-12',value:120.93,refunded:10.25}]}},
     {businessId:'1bb',provider:'posthog',attemptedAt:new Date(now).toISOString(),error:'NOT_CONFIGURED'},
   ];
   return renderToStaticMarkup(React.createElement(exports.ReportOverview,{sources,now}));
@@ -27,6 +27,7 @@ for(const width of [390,1440]) test(`overview graphs, missing data, delayed resu
   await expect(page.getByRole('heading',{name:'Check Stripe payments'})).toBeVisible();
   await expect(page.getByText('The latest refresh failed. Showing the last successful report.')).toBeVisible();
   await expect(page.getByText('Waiting for the first successful background report.')).toBeVisible();
+  await expect(page.locator('.report-total').nth(1)).toHaveText('$120.93');
   expect(await page.locator('svg[role="img"]').count()).toBe(2);
   expect(await page.locator('.graph-missing').count()).toBe(34);
   await page.locator('summary').first().focus();
