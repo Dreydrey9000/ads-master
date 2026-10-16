@@ -5,7 +5,7 @@ const csv = 'platform,spend,revenue,impressions,clicks,conversions\nmeta,100,400
 test('desktop navigation, ad search and no browser errors', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await expect(page.getByRole('heading', { name: 'Your ads, in focus.' })).toBeVisible();
-  await page.getByRole('button', { name: 'Explore sample', exact: true }).click();
+  await page.getByLabel('Select business').selectOption('viral-editz');
   await expect(page.getByText('You’re exploring sample data.')).toBeVisible();
   await expect(page.locator('.recharts-area-curve')).toBeVisible();
   await expect(page.locator('.recharts-pie-sector').first()).toBeVisible();
@@ -30,7 +30,8 @@ test('import real results, persist, export and isolate businesses', async ({ pag
   await expect(page.locator('.kpi-0')).toContainText('$150');
   const downloaded = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export', exact: true }).click();
   expect((await downloaded).suggestedFilename()).toBe('1bb-report.csv');
-  await page.getByRole('button', { name: 'AI Insights', exact: true }).click(); await expect(page.getByRole('heading', { name: 'No verified insights yet.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'AI Insights', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Explore sample', exact: true })).toHaveCount(0);
   await page.getByLabel('Select business').selectOption('viral-editz'); await page.getByRole('button', { name: 'Overview', exact: true }).click();
   await expect(page.locator('.source-pill')).toHaveText('Sample workspace');
   await page.getByLabel('Select business').selectOption('1bb'); await expect(page.locator('.kpi-0')).toContainText('$150');
@@ -111,4 +112,25 @@ test('personal report navigation handles sample mode and business switching', as
   await page.goto('/updates');
   await expect(page.getByRole('heading', { name: 'DreyOS reporting, within reach' })).toBeVisible();
   await expect(page.locator('img').first()).toBeVisible();
+});
+
+test('1BB never inherits sample research or false connection labels', async ({ page }) => {
+  await page.goto('/');
+  await page.getByLabel('Select business').selectOption('viral-editz');
+  await page.getByRole('button', { name: 'Winning Ads', exact: true }).click();
+  await expect(page.locator('.source-pill')).toHaveText('Sample workspace');
+  await page.getByLabel('Select business').selectOption('1bb');
+  await expect(page).toHaveTitle('Overview | Ads Master');
+  await expect(page.locator('.source-pill')).toHaveText('Your workspace');
+  await expect(page.getByRole('button', { name: 'Explore sample', exact: true })).toHaveCount(0);
+  for (const name of ['AI Insights', 'Winning Ads', 'Spend Trends']) {
+    await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
+  }
+  await expect(page.locator('.kpi-0')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Connections', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '1BB · Automatic reports' })).toBeVisible();
+  await expect(page.getByText('Not connected', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('CSV import available', { exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Explore sample', exact: true })).toHaveCount(0);
 });
