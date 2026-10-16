@@ -23,7 +23,7 @@ function fixtureMarkup() {
 for(const width of [390,1440]) test(`overview graphs, missing data, delayed results and keyboard access at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});
   const css=fs.readFileSync('app/globals.css','utf8')+fs.readFileSync('components/live-overview.css','utf8');
-  await page.setContent(`<html lang="en"><head><title>Reporting UI fixture</title><style>${css}</style></head><body><main style="padding:24px;max-width:1200px;margin:auto"><h1>Illustrative reporting example</h1><p>Fictional figures for interface testing.</p><div class="overview-stack">${fixtureMarkup()}</div></main></body></html>`);
+  await page.setContent(`<html lang="en"><head><title>Reporting UI fixture</title><style>${css}</style></head><body><main style="padding:24px;max-width:1200px;margin:auto"><header class="page-heading"><div><h1>Illustrative reporting example</h1><p>Fictional figures for interface testing.</p></div></header><div class="overview-stack">${fixtureMarkup()}</div></main></body></html>`);
   await expect(page.getByRole('heading',{name:'Check Stripe payments'})).toBeVisible();
   await expect(page.getByText('The latest refresh failed. Showing the last successful report.')).toBeVisible();
   await expect(page.getByText('Waiting for the first successful background report.')).toBeVisible();
@@ -38,5 +38,6 @@ for(const width of [390,1440]) test(`overview graphs, missing data, delayed resu
   await page.locator('summary').first().press('Enter');
   if(width===1440) await page.screenshot({path:'public/updates/automatic-overview-example.png',fullPage:true});
   await page.evaluate(()=>{document.documentElement.style.fontSize='200%';});
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  const overflow=await page.evaluate(()=>Array.from(document.querySelectorAll('main *')).filter(el=>el.getBoundingClientRect().right>innerWidth+1).map(el=>({tag:el.tagName,className:el.className,text:el.textContent?.slice(0,70)})));
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),JSON.stringify(overflow)).toBe(true);
 });
