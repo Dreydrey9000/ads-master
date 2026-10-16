@@ -108,6 +108,6 @@ test('personal report navigation handles sample mode and business switching', as
   await expect(page).toHaveTitle('Overview | Ads Master');
   await expect(page.getByRole('button', { name: 'Account reports', exact: true })).toHaveCount(0);
   await page.goto('/updates');
-  await expect(page.getByRole('heading', { name: 'Your new Glass Workspace' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'DreyOS reporting, within reach' })).toBeVisible();
   await expect(page.locator('img').first()).toBeVisible();
 });

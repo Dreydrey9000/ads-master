@@ -96,3 +96,5 @@ The previous `ads.dreythomas.com` address remains available for exporting report
 ### Glass Workspace
 
 The approved visual direction is recorded in [THEME-DECISION.md](THEME-DECISION.md). Open the personal workspace and choose **Account reports** in the navigation for private reporting. The glass design adapts to mobile and respects reduced motion and reduced transparency.
+
+The **DreyOS Growth** sidebar shortcut opens the separately authenticated Growth workbook. Select 1BB there for its connected ChatGPT Ads, Stripe and PostHog reports. This is navigation, not a report-data bridge: DreyOS totals do not populate Ads Master's sample/CSV charts. See the [reporting architecture](docs/diagrams/reporting.mmd). Hourly refresh is installed and verified in DreyOS for 1BB's three providers and personal Stripe plus ChatGPT Ads; Ads Master's Meta and Google reports still refresh only while open.
